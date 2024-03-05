@@ -79,8 +79,8 @@
     "button_length": 0,
     "fg_color": ["#939BA2", "#4A4D50"],
     "progress_color": ["gray40", "#AAB0B5"],
-    "button_color": ["#3B8ED0", "#1F6AA5"],
-    "button_hover_color": ["#36719F", "#144870"]
+    "button_color": ["#d6382d", "#d6382d"],
+    "button_hover_color": ["#f75a4f", "#f75a4f"]
   },
   "CTkOptionMenu": {
     "corner_radius": 6,
