@@ -6,22 +6,25 @@ import customtkinter as ctk
 
 ctk.set_appearance_mode("dark")
 
-
 def save_theme(theme):
-    config = {'selected_theme': theme}
-    with open('theme.json', 'w') as config_file:
-        json.dump(config, config_file)
+    config = load_config()
+    config['theme'] = theme
+    save_config(config)
 
-def load_theme():
+def load_config():
     try:
-        with open('theme.json', 'r') as config_file:
+        with open('config.json', 'r') as config_file:
             config = json.load(config_file)
-            selected_theme = config.get('selected_theme', 'Default')
     except FileNotFoundError:
-        selected_theme = 'Default'
+        config = {'theme': 'Default'}
+    
+    ctk.set_default_color_theme(f"themes/{config['theme']}.json")
 
-    ctk.set_default_color_theme(f"themes/{selected_theme}.json")
+    return config
 
+def save_config(config):
+    with open('config.json', 'w') as config_file:
+        json.dump(config, config_file)
 
 def reload_app():
     os.execl(sys.executable, sys.executable, *sys.argv)
@@ -30,21 +33,22 @@ def reload_app():
 class SettingsFrame(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
+        self.select_var = ctk.StringVar(value="...")
 
+        # Selecting theme
         self.theme_label = ctk.CTkLabel(self, text="Select Theme:")
         self.theme_label.pack(pady=10)
 
         themes_dir = 'themes'
         self.theme_options = [os.path.splitext(theme)[0] for theme in os.listdir(themes_dir) if theme.endswith('.json')]
         
-        self.theme_var = ctk.StringVar(value="...")
-
-        self.theme_menu = ctk.CTkOptionMenu(self, variable=self.theme_var, values=self.theme_options, anchor="n", command=self.change_theme)
+        self.theme_menu = ctk.CTkOptionMenu(self, variable=self.select_var, values=self.theme_options, anchor="n", command=self.change_theme)
         self.theme_menu.pack()
 
     def change_theme(self, theme):
         save_theme(theme)
         reload_app()
+
 
 class PomodoroFrame(ctk.CTkFrame):
     def __init__(self, master):
@@ -57,9 +61,8 @@ class PomodoroFrame(ctk.CTkFrame):
                                           border_width=2, command=self.start_timer)
         self.start_button.pack()
 
-        # Additional attributes for managing the timer
         self.running = False
-        self.remaining_time = 25 * 60  # 25 minutes in seconds
+        self.remaining_time = 25 * 60
 
     def start_timer(self):
         self.running = True if self.running is False else False
@@ -106,6 +109,6 @@ class PomodoroApp(ctk.CTk):
 
 
 if __name__ == "__main__":
-    load_theme()
+    load_config()
     app = PomodoroApp()
     app.mainloop()
