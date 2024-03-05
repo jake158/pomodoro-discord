@@ -46,20 +46,35 @@ class SettingsFrame(ctk.CTkFrame):
         save_theme(theme)
         reload_app()
 
-
 class PomodoroFrame(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
 
         self.timer_display = ctk.CTkLabel(self, text="25:00", font=("Helvetica", 58))
-        self.timer_display.pack(pady=50)
+        self.timer_display.pack(pady=40)
 
-        self.start_button = ctk.CTkButton(self, text="Start", fg_color="transparent",
+        self.start_button = ctk.CTkButton(self, text="START", fg_color="transparent",
                                           border_width=2, command=self.start_timer)
         self.start_button.pack()
 
+        # Additional attributes for managing the timer
+        self.running = False
+        self.remaining_time = 25 * 60  # 25 minutes in seconds
+
     def start_timer(self):
-        print("Timer started")
+        self.running = True if self.running is False else False
+        btn_text = "PAUSE" if self.running else "START"
+        self.start_button.configure(text=btn_text)
+        self.update_timer()
+
+    def update_timer(self):
+        if self.running and self.remaining_time > 0:
+            self.remaining_time -= 1
+            minutes, seconds = divmod(self.remaining_time, 60)
+            self.timer_display.configure(text=f"{minutes:02d}:{seconds:02d}")
+            self.after(1000, self.update_timer)
+        else:
+            self.running = False
 
 
 class TabView(ctk.CTkTabview):
