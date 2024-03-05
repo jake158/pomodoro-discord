@@ -9,7 +9,6 @@ ctk.set_appearance_mode("dark")
 
 mixer.init()
 beep = mixer.Sound('beep.mp3')
-beep.set_volume(0.05)
 
 
 def save_theme(theme):
@@ -70,9 +69,34 @@ class SettingsFrame(ctk.CTkFrame):
         self.theme_menu = ctk.CTkOptionMenu(self, variable=self.select_var, values=self.theme_options, anchor="n", command=self.change_theme)
         self.theme_menu.pack()
 
+        # Volume Slider
+        self.volume_label = ctk.CTkLabel(self, text="Adjust Beep Volume:")
+        self.volume_label.pack(pady=(20, 2))
+
+        self.volume_slider = ctk.CTkSlider(self, from_=0, to=100, number_of_steps=100, command=self.change_volume)
+        self.volume_slider.pack(pady=20)
+
+        # Set the slider to the current volume
+        config = load_config()
+        self.volume_slider.set(config.get('volume', 10))  # Default volume to 10% if not set
+        self.change_volume(config.get('volume', 10))
+
+        # Play Beep button
+        self.beep_button = ctk.CTkButton(self, text="Play", fg_color="transparent",
+                                          border_width=2, width=70, command=beep.play)
+        self.beep_button.pack()
+
     def change_theme(self, theme):
         save_theme(theme)
         reload_app()
+
+    def change_volume(self, volume):
+        volume = float(volume) / 100
+        beep.set_volume(volume)
+        config = load_config()
+        config['volume'] = volume * 100
+        save_config(config)
+
 
 class PomodoroFrame(ctk.CTkFrame):
     def __init__(self, master):
