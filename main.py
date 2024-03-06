@@ -32,35 +32,57 @@ def reload_app():
 class StatsFrame(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
+        self.data_file = 'data.json'
 
-        self.total_hours_var = ctk.StringVar(value="Total Hours Studied: 0")
-        self.total_hours_label = ctk.CTkLabel(self, textvariable=self.total_hours_var, font=("Helvetica", 18, "bold"))
-        self.total_hours_label.pack(pady=40)
+        self.total_today_var = ctk.StringVar(value="Pomodoros Today:  0")
+        self.total_today = ctk.CTkLabel(self, textvariable=self.total_today_var, 
+                                              font=("Helvetica", 16, "bold"), anchor="w")
+        self.total_today.pack(pady=15, fill="x")
+
+        self.total_hours_var = ctk.StringVar(value="Total Hours Studied:  0")
+        self.total_hours = ctk.CTkLabel(self, textvariable=self.total_hours_var, 
+                                              font=("Helvetica", 16, "bold"), anchor="w")
+        self.total_hours.pack(fill="x")
+
+        self.total_var = ctk.StringVar(value="Total Pomodoros:  0")
+        self.total = ctk.CTkLabel(self, textvariable=self.total_var, 
+                                              font=("Helvetica", 16, "bold"), anchor="w")
+        self.total.pack(pady=15, fill="x")
+
+        self.update_stats = ctk.CTkButton(self, text="Update", width=70, command=self.load_stats)
+        self.update_stats.pack(pady=10)
 
         self.load_stats()
 
     def load_stats(self):
-        # TODO: Implement
-        self.total_hours_var.set("Total Hours Studied: ...")
+        if os.path.exists(self.data_file):
+            with open(self.data_file, 'r') as file:
+                data = json.load(file)
+                current_date = datetime.now().strftime("%Y-%m-%d")
+                total_today = data.get('sessions_by_date', {}).get(current_date, 0)
 
-    def update_stats(self, new_data):
-        # TODO: Implement
-        pass
+                self.total_today_var.set(f"Pomodoros Today:  {total_today}")
+
+                total_seconds_studied = data.get('total_seconds_studied', 0)
+                total_hours = total_seconds_studied / 3600
+
+                self.total_hours_var.set(f"Total Hours Studied:  {total_hours:.1f}")
+
+                self.total_var.set(f"Total Pomodoros:  {data.get('total_pomodoro_sessions', 0)}")
 
 
 class SettingsFrame(ctk.CTkScrollableFrame):
     def __init__(self, master):
         super().__init__(master)
-        self.select_var = ctk.StringVar(value="...")
+        self.themes_dir = 'themes'
 
         # Selecting theme
         self.theme_label = ctk.CTkLabel(self, text="Select Theme:")
         self.theme_label.pack(pady=10)
 
-        themes_dir = 'themes'
-        self.theme_options = [os.path.splitext(theme)[0] for theme in os.listdir(themes_dir) if theme.endswith('.json')]
+        self.theme_options = [os.path.splitext(theme)[0] for theme in os.listdir(self.themes_dir) if theme.endswith('.json')]
         
-        self.theme_menu = ctk.CTkOptionMenu(self, variable=self.select_var, values=self.theme_options, anchor="n", command=self.change_theme)
+        self.theme_menu = ctk.CTkOptionMenu(self, variable=ctk.StringVar(value="..."), values=self.theme_options, anchor="n", command=self.change_theme)
         self.theme_menu.pack()
 
         # Volume Slider
@@ -160,7 +182,7 @@ class PomodoroFrame(ctk.CTkFrame):
         if os.path.exists(self.data_file):
             with open(self.data_file, 'r') as file:
                 data = json.load(file)
-                data['total_pomodoro_sessions_done'] = data.get('total_pomodoro_sessions_done', 0) + 1
+                data['total_pomodoro_sessions'] = data.get('total_pomodoro_sessions', 0) + 1
 
                 if 'sessions_by_date' not in data:
                     data['sessions_by_date'] = {}
@@ -168,7 +190,7 @@ class PomodoroFrame(ctk.CTkFrame):
         else:
             data = {
                 'total_seconds_studied': 0, 
-                'total_pomodoro_sessions_done': 1,
+                'total_pomodoro_sessions': 1,
                 'sessions_by_date': {current_date: 1}
             }
         
