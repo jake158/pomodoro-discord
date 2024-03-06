@@ -79,22 +79,37 @@ class SettingsFrame(ctk.CTkScrollableFrame):
         self.themes_dir = 'themes'
         config = load_config()
 
+
+        # Pomodoro Durations
+        self.pomodoro_label = ctk.CTkLabel(self, text="Set Pomodoro Duration (minutes):")
+        self.pomodoro_label.pack(pady=(20, 0))
+
+        self.pomodoro_row_frame = ctk.CTkFrame(self)
+        self.pomodoro_row_frame.pack(pady=(20, 0))
+
+        self.pomodoro_time_var = ctk.IntVar(value=config.get("pomodoro_time", 25))
+        self.pomodoro_time_entry = ctk.CTkEntry(self.pomodoro_row_frame, width=40, textvariable=self.pomodoro_time_var)
+        self.pomodoro_time_entry.pack(side="left", padx=(0, 5))
+
+        self.pomodoro_set_button = ctk.CTkButton(self.pomodoro_row_frame, text="Set", width=30, fg_color="transparent", border_width=2, command=self.change_pomodoro_time)
+        self.pomodoro_set_button.pack(side="right", padx=(5, 0))
+
         # Selecting theme
         self.theme_label = ctk.CTkLabel(self, text="Select Theme:")
-        self.theme_label.pack(pady=10)
+        self.theme_label.pack(pady=(20, 0))
 
         self.theme_options = [os.path.splitext(theme)[0] for theme in os.listdir(self.themes_dir) if theme.endswith('.json')]
 
         selected = ctk.StringVar(value=config.get('theme', 'Default'))        
         self.theme_menu = ctk.CTkOptionMenu(self, variable=selected, values=self.theme_options, anchor="n", command=self.change_theme)
-        self.theme_menu.pack()
+        self.theme_menu.pack(pady=(10, 0))
 
         # Volume Slider
         self.volume_label = ctk.CTkLabel(self, text="Adjust Beep Volume:")
-        self.volume_label.pack(pady=(20, 2))
+        self.volume_label.pack(pady=(20, 0))
 
         self.volume_slider = ctk.CTkSlider(self, from_=0, to=100, number_of_steps=100, command=self.change_volume)
-        self.volume_slider.pack(pady=20)
+        self.volume_slider.pack(pady=(10, 0))
 
         # Set the slider to the current volume
         self.volume_slider.set(config.get('volume', 10))  # Default volume to 10% if not set
@@ -103,7 +118,14 @@ class SettingsFrame(ctk.CTkScrollableFrame):
         # Play Beep button
         self.beep_button = ctk.CTkButton(self, text="Play", fg_color="transparent",
                                           border_width=2, width=70, command=beep.play)
-        self.beep_button.pack()
+        self.beep_button.pack(pady=(15, 0))
+
+    def change_pomodoro_time(self):
+        time = self.pomodoro_time_var.get()
+        if time and time > 0:
+            config = load_config()
+            config['pomodoro_time'] = time
+            save_config(config)
 
     def change_theme(self, theme):
         config = load_config()
@@ -124,7 +146,8 @@ class PomodoroFrame(ctk.CTkFrame):
         super().__init__(master)
         self.data_file = 'data.json'
         config = load_config()
-        self.pomodoro_time = config.get("pomodoro_time", 25 * 60)
+        # TODO: fix crutch
+        self.pomodoro_time = config.get("pomodoro_time", 25) * 60
 
         minutes, seconds = divmod(self.pomodoro_time, 60)
         self.timer_display = ctk.CTkLabel(self, text=f"{minutes:02d}:{seconds:02d}", font=("Helvetica", 58))
@@ -185,7 +208,8 @@ class PomodoroFrame(ctk.CTkFrame):
             self.next_timer_update = None
 
         config = load_config()
-        self.pomodoro_time = config.get(to, self.pomodoro_time)
+        # TODO: fix crutch
+        self.pomodoro_time = int(config.get(to, self.pomodoro_time / 60) * 60)
 
         # Reset the timer
         self.remaining_time = self.pomodoro_time
