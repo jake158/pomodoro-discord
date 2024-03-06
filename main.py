@@ -79,13 +79,12 @@ class SettingsFrame(ctk.CTkScrollableFrame):
         self.themes_dir = 'themes'
         config = load_config()
 
-
-        # Pomodoro Durations
-        self.pomodoro_label = ctk.CTkLabel(self, text="Set Pomodoro Duration (minutes):")
-        self.pomodoro_label.pack(pady=(20, 0))
+        # Pomodoro Duration
+        self.pomodoro_label = ctk.CTkLabel(self, text="Pomodoro Duration (mins):")
+        self.pomodoro_label.pack(pady=(10, 0))
 
         self.pomodoro_row_frame = ctk.CTkFrame(self)
-        self.pomodoro_row_frame.pack(pady=(20, 0))
+        self.pomodoro_row_frame.pack(pady=(5, 0))
 
         self.pomodoro_time_var = ctk.IntVar(value=config.get("pomodoro_time", 25))
         self.pomodoro_time_entry = ctk.CTkEntry(self.pomodoro_row_frame, width=40, textvariable=self.pomodoro_time_var)
@@ -93,6 +92,34 @@ class SettingsFrame(ctk.CTkScrollableFrame):
 
         self.pomodoro_set_button = ctk.CTkButton(self.pomodoro_row_frame, text="Set", width=30, fg_color="transparent", border_width=2, command=self.change_pomodoro_time)
         self.pomodoro_set_button.pack(side="right", padx=(5, 0))
+
+        # Short Break Duration
+        self.sb_label = ctk.CTkLabel(self, text="Short Break Duration (mins):")
+        self.sb_label.pack(pady=(20, 0))
+
+        self.sb_row_frame = ctk.CTkFrame(self)
+        self.sb_row_frame.pack(pady=(5, 0))
+
+        self.sb_time_var = ctk.IntVar(value=config.get("short_break_time", 5))
+        self.sb_time_entry = ctk.CTkEntry(self.sb_row_frame, width=40, textvariable=self.sb_time_var)
+        self.sb_time_entry.pack(side="left", padx=(0, 5))
+
+        self.sb_set_button = ctk.CTkButton(self.sb_row_frame, text="Set", width=30, fg_color="transparent", border_width=2, command=self.change_sb_time)
+        self.sb_set_button.pack(side="right", padx=(5, 0))
+
+        # Long Break Duration
+        self.lb_label = ctk.CTkLabel(self, text="Long Break Duration (mins):")
+        self.lb_label.pack(pady=(20, 0))
+
+        self.lb_row_frame = ctk.CTkFrame(self)
+        self.lb_row_frame.pack(pady=(5, 0))
+
+        self.lb_time_var = ctk.IntVar(value=config.get("long_break_time", 10))
+        self.lb_time_entry = ctk.CTkEntry(self.lb_row_frame, width=40, textvariable=self.lb_time_var)
+        self.lb_time_entry.pack(side="left", padx=(0, 5))
+
+        self.lb_set_button = ctk.CTkButton(self.lb_row_frame, text="Set", width=30, fg_color="transparent", border_width=2, command=self.change_lb_time)
+        self.lb_set_button.pack(side="right", padx=(5, 0))
 
         # Selecting theme
         self.theme_label = ctk.CTkLabel(self, text="Select Theme:")
@@ -120,12 +147,21 @@ class SettingsFrame(ctk.CTkScrollableFrame):
                                           border_width=2, width=70, command=beep.play)
         self.beep_button.pack(pady=(15, 0))
 
-    def change_pomodoro_time(self):
-        time = self.pomodoro_time_var.get()
+    def change_time(self, time_var, config_param):
+        time = time_var.get()
         if time and time > 0:
             config = load_config()
-            config['pomodoro_time'] = time
+            config[config_param] = time
             save_config(config)
+
+    def change_pomodoro_time(self):
+        self.change_time(self.pomodoro_time_var, "pomodoro_time")
+
+    def change_sb_time(self):
+        self.change_time(self.sb_time_var, "short_break_time")
+
+    def change_lb_time(self):
+        self.change_time(self.lb_time_var, "long_break_time")
 
     def change_theme(self, theme):
         config = load_config()
@@ -201,7 +237,7 @@ class PomodoroFrame(ctk.CTkFrame):
         with open(self.data_file, 'w') as file:
             json.dump(data, file, indent=4)
 
-    def reset(self, to:str="pomodoro_time"):
+    def reset(self, to:str="pomodoro_time", default:int=25):
         self.running = False
         if self.next_timer_update:
             self.after_cancel(self.next_timer_update)
@@ -209,7 +245,7 @@ class PomodoroFrame(ctk.CTkFrame):
 
         config = load_config()
         # TODO: fix crutch
-        self.pomodoro_time = int(config.get(to, self.pomodoro_time / 60) * 60)
+        self.pomodoro_time = int(config.get(to, default) * 60)
 
         # Reset the timer
         self.remaining_time = self.pomodoro_time
@@ -243,11 +279,11 @@ class PomodoroFrame(ctk.CTkFrame):
         beep.play() 
 
     def short_break(self):
-        self.reset(to="short_break_time")
+        self.reset(to="short_break_time", default=5)
         self.start_timer()
     
     def long_break(self):
-        self.reset(to="long_break_time")
+        self.reset(to="long_break_time", default=10)
         self.start_timer()
 
 
