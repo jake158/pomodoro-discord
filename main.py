@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import customtkinter as ctk
+from datetime import datetime
 from pygame import mixer
 
 
@@ -145,24 +146,36 @@ class PomodoroFrame(ctk.CTkFrame):
         
         with open(self.data_file, 'w') as file:
             json.dump(data, file, indent=4)
-    
+
     def session_ended(self):
         # Reset the timer
         self.remaining_time = self.pomodoro_time
         minutes, seconds = divmod(self.remaining_time, 60)
         self.timer_display.configure(text=f"{minutes:02d}:{seconds:02d}")
         self.start_button.configure(text="START")
-
-        # Update the total pomodoro sessions done
+        
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        
+        # Update the total pomodoro sessions done and sessions done per date
         if os.path.exists(self.data_file):
             with open(self.data_file, 'r') as file:
                 data = json.load(file)
                 data['total_pomodoro_sessions_done'] = data.get('total_pomodoro_sessions_done', 0) + 1
 
-            with open(self.data_file, 'w') as file:
-                json.dump(data, file, indent=4)
+                if 'sessions_by_date' not in data:
+                    data['sessions_by_date'] = {}
+                data['sessions_by_date'][current_date] = data['sessions_by_date'].get(current_date, 0) + 1
+        else:
+            data = {
+                'total_seconds_studied': 0, 
+                'total_pomodoro_sessions_done': 1,
+                'sessions_by_date': {current_date: 1}
+            }
+        
+        with open(self.data_file, 'w') as file:
+            json.dump(data, file, indent=4)
 
-        beep.play()
+        beep.play() 
 
 
 class TabView(ctk.CTkTabview):
