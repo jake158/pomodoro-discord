@@ -12,19 +12,12 @@ mixer.init()
 beep = mixer.Sound('beep.mp3')
 
 
-def save_theme(theme):
-    config = load_config()
-    config['theme'] = theme
-    save_config(config)
-
 def load_config():
     try:
         with open('config.json', 'r') as config_file:
             config = json.load(config_file)
     except FileNotFoundError:
         config = {'theme': 'Default'}
-    
-    ctk.set_default_color_theme(f"themes/{config['theme']}.json")
 
     return config
 
@@ -55,7 +48,7 @@ class StatsFrame(ctk.CTkFrame):
         pass
 
 
-class SettingsFrame(ctk.CTkFrame):
+class SettingsFrame(ctk.CTkScrollableFrame):
     def __init__(self, master):
         super().__init__(master)
         self.select_var = ctk.StringVar(value="...")
@@ -88,7 +81,9 @@ class SettingsFrame(ctk.CTkFrame):
         self.beep_button.pack()
 
     def change_theme(self, theme):
-        save_theme(theme)
+        config = load_config()
+        config['theme'] = theme
+        save_config(config)
         reload_app()
 
     def change_volume(self, volume):
@@ -109,19 +104,24 @@ class PomodoroFrame(ctk.CTkFrame):
         self.timer_display = ctk.CTkLabel(self, text=f"{minutes:02d}:{seconds:02d}", font=("Helvetica", 58))
         self.timer_display.pack(pady=40)
 
-        self.start_button = ctk.CTkButton(self, text="START", fg_color="transparent",
-                                          border_width=2, command=self.start_timer)
+        self.start_button = ctk.CTkButton(self, text="Start", font=("Roboto", 17), border_width=2, command=self.start_timer)
+        self.start_color = self.start_button.cget("fg_color")
         self.start_button.pack()
 
         self.running = False
+        self.next_timer_update = None
         self.remaining_time = self.pomodoro_time
 
     def start_timer(self):
+        if self.next_timer_update:
+            # Prevents two update_timer loops happening at the same time
+            self.after_cancel(self.next_timer_update)
+
         self.running = not self.running
-        btn_text = "PAUSE" if self.running else "START"
-        self.start_button.configure(text=btn_text)
-        if self.running:
-            self.update_timer()
+        btn_text = "Pause" if self.running else "Start"
+        btn_fg = "transparent" if self.running else self.start_color
+        self.start_button.configure(text=btn_text, fg_color=btn_fg, hover=not self.running)
+        self.update_timer()
 
     def update_timer(self):
         if self.running and self.remaining_time > 0:
@@ -129,12 +129,9 @@ class PomodoroFrame(ctk.CTkFrame):
             self.track_second()
             minutes, seconds = divmod(self.remaining_time, 60)
             self.timer_display.configure(text=f"{minutes:02d}:{seconds:02d}")
-            self.after(1000, self.update_timer)
+            self.next_timer_update = self.after(1000, self.update_timer)
         elif self.remaining_time == 0:
-            self.running = False
             self.session_ended()
-        else:
-            self.running = False
 
     def track_second(self):
         if os.path.exists(self.data_file):
@@ -148,6 +145,9 @@ class PomodoroFrame(ctk.CTkFrame):
             json.dump(data, file, indent=4)
 
     def session_ended(self):
+        self.running = False
+        self.next_timer_update = None
+
         # Reset the timer
         self.remaining_time = self.pomodoro_time
         minutes, seconds = divmod(self.remaining_time, 60)
@@ -211,6 +211,7 @@ class PomodoroApp(ctk.CTk):
 
 
 if __name__ == "__main__":
-    load_config()
+    config = load_config()
+    ctk.set_default_color_theme(f"themes/{config['theme']}.json")
     app = PomodoroApp()
     app.mainloop()
