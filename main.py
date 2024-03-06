@@ -5,8 +5,10 @@ import customtkinter as ctk
 from datetime import datetime
 from pygame import mixer
 
-
-ctk.set_appearance_mode("dark")
+BREAK_BTN_COLOR = "#9a9a9a"
+BREAK_HOVER = "#adaaaa"
+RESET_BTN_COLOR = "#cfa911"
+RESET_HOVER = "#dbb30f"
 
 mixer.init()
 beep = mixer.Sound('beep.mp3')
@@ -37,20 +39,20 @@ class StatsFrame(ctk.CTkFrame):
         self.total_today_var = ctk.StringVar(value="Pomodoros Today:  0")
         self.total_today = ctk.CTkLabel(self, textvariable=self.total_today_var, 
                                               font=("Helvetica", 16, "bold"), anchor="w")
-        self.total_today.pack(pady=15, fill="x")
+        self.total_today.pack(padx=20, pady=(20, 0), fill="x")
 
         self.total_hours_var = ctk.StringVar(value="Total Hours Studied:  0")
         self.total_hours = ctk.CTkLabel(self, textvariable=self.total_hours_var, 
                                               font=("Helvetica", 16, "bold"), anchor="w")
-        self.total_hours.pack(fill="x")
+        self.total_hours.pack(padx=20, pady=(20, 0), fill="x")
 
         self.total_var = ctk.StringVar(value="Total Pomodoros:  0")
         self.total = ctk.CTkLabel(self, textvariable=self.total_var, 
                                               font=("Helvetica", 16, "bold"), anchor="w")
-        self.total.pack(pady=15, fill="x")
+        self.total.pack(padx=20, pady=(20, 0), fill="x")
 
-        self.update_stats = ctk.CTkButton(self, text="Update", width=70, command=self.load_stats)
-        self.update_stats.pack(pady=10)
+        self.update_stats = ctk.CTkButton(self, text="Update", width=90, font=("Roboto", 16), command=self.load_stats)
+        self.update_stats.pack(pady=40, side=ctk.BOTTOM)
 
         self.load_stats()
 
@@ -75,14 +77,16 @@ class SettingsFrame(ctk.CTkScrollableFrame):
     def __init__(self, master):
         super().__init__(master)
         self.themes_dir = 'themes'
+        config = load_config()
 
         # Selecting theme
         self.theme_label = ctk.CTkLabel(self, text="Select Theme:")
         self.theme_label.pack(pady=10)
 
         self.theme_options = [os.path.splitext(theme)[0] for theme in os.listdir(self.themes_dir) if theme.endswith('.json')]
-        
-        self.theme_menu = ctk.CTkOptionMenu(self, variable=ctk.StringVar(value="..."), values=self.theme_options, anchor="n", command=self.change_theme)
+
+        selected = ctk.StringVar(value=config.get('theme', 'Default'))        
+        self.theme_menu = ctk.CTkOptionMenu(self, variable=selected, values=self.theme_options, anchor="n", command=self.change_theme)
         self.theme_menu.pack()
 
         # Volume Slider
@@ -93,7 +97,6 @@ class SettingsFrame(ctk.CTkScrollableFrame):
         self.volume_slider.pack(pady=20)
 
         # Set the slider to the current volume
-        config = load_config()
         self.volume_slider.set(config.get('volume', 10))  # Default volume to 10% if not set
         self.change_volume(config.get('volume', 10))
 
@@ -120,7 +123,8 @@ class PomodoroFrame(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
         self.data_file = 'data.json'
-        self.pomodoro_time = 25 * 60
+        config = load_config()
+        self.pomodoro_time = config.get("pomodoro_time", 25 * 60)
 
         minutes, seconds = divmod(self.pomodoro_time, 60)
         self.timer_display = ctk.CTkLabel(self, text=f"{minutes:02d}:{seconds:02d}", font=("Helvetica", 58))
@@ -128,7 +132,16 @@ class PomodoroFrame(ctk.CTkFrame):
 
         self.start_button = ctk.CTkButton(self, text="Start", font=("Roboto", 17), border_width=2, command=self.start_timer)
         self.start_color = self.start_button.cget("fg_color")
-        self.start_button.pack()
+        self.start_button.pack(pady=(0, 10))
+
+        self.sb_button = ctk.CTkButton(self, text="Short break", font=("Roboto", 17), fg_color=BREAK_BTN_COLOR, hover_color=BREAK_HOVER, command=self.short_break)
+        self.sb_button.pack(pady=(0, 10))
+
+        self.lb_button = ctk.CTkButton(self, text="Long break", font=("Roboto", 17), fg_color=BREAK_BTN_COLOR, hover_color=BREAK_HOVER, command=self.long_break)
+        self.lb_button.pack(pady=(0, 10))
+
+        self.reset_button = ctk.CTkButton(self, text="Reset", font=("Roboto", 17), fg_color=RESET_BTN_COLOR, hover_color=RESET_HOVER, command=self.reset)
+        self.reset_button.pack()
 
         self.running = False
         self.next_timer_update = None
@@ -136,11 +149,10 @@ class PomodoroFrame(ctk.CTkFrame):
 
     def start_timer(self):
         if self.next_timer_update:
-            # Prevents two update_timer loops happening at the same time
             self.after_cancel(self.next_timer_update)
 
         self.running = not self.running
-        btn_text = "Pause" if self.running else "Start"
+        btn_text = "Pause" if self.running else "Resume"
         btn_fg = "transparent" if self.running else self.start_color
         self.start_button.configure(text=btn_text, fg_color=btn_fg, hover=not self.running)
         self.update_timer()
@@ -166,19 +178,26 @@ class PomodoroFrame(ctk.CTkFrame):
         with open(self.data_file, 'w') as file:
             json.dump(data, file, indent=4)
 
-    def session_ended(self):
+    def reset(self, to:str="pomodoro_time"):
         self.running = False
-        self.next_timer_update = None
+        if self.next_timer_update:
+            self.after_cancel(self.next_timer_update)
+            self.next_timer_update = None
+
+        config = load_config()
+        self.pomodoro_time = config.get(to, self.pomodoro_time)
 
         # Reset the timer
         self.remaining_time = self.pomodoro_time
         minutes, seconds = divmod(self.remaining_time, 60)
         self.timer_display.configure(text=f"{minutes:02d}:{seconds:02d}")
-        self.start_button.configure(text="START")
-        
+        self.start_button.configure(text="Start", fg_color=self.start_color)
+
+    def session_ended(self):
+        self.reset()
+ 
         current_date = datetime.now().strftime("%Y-%m-%d")
         
-        # Update the total pomodoro sessions done and sessions done per date
         if os.path.exists(self.data_file):
             with open(self.data_file, 'r') as file:
                 data = json.load(file)
@@ -199,6 +218,14 @@ class PomodoroFrame(ctk.CTkFrame):
 
         beep.play() 
 
+    def short_break(self):
+        self.reset(to="short_break_time")
+        self.start_timer()
+    
+    def long_break(self):
+        self.reset(to="long_break_time")
+        self.start_timer()
+
 
 class TabView(ctk.CTkTabview):
     def __init__(self, master, **kwargs):
@@ -209,18 +236,18 @@ class TabView(ctk.CTkTabview):
         self.add("Stats")
 
         self.main_frame = PomodoroFrame(self.tab("Main"))
-        self.main_frame.pack()
+        self.main_frame.pack(expand=True, fill='both')
 
         self.settings_frame = SettingsFrame(self.tab("Settings"))
-        self.settings_frame.pack()
+        self.settings_frame.pack(expand=True, fill='both')
 
         self.stats_frame = StatsFrame(self.tab("Stats"))
-        self.stats_frame.pack()
+        self.stats_frame.pack(expand=True, fill='both')
 
 
 class PomodoroApp(ctk.CTk):
     WIDTH = 350
-    HEIGHT = 350
+    HEIGHT = 400
 
     def __init__(self):
         super().__init__()
@@ -229,11 +256,12 @@ class PomodoroApp(ctk.CTk):
         self.geometry(f"{PomodoroApp.WIDTH}x{PomodoroApp.HEIGHT}")
 
         self.tabview = TabView(master=self)
-        self.tabview.pack(pady=30)
+        self.tabview.pack(pady=(15, 30), expand=True, fill='y')
 
 
 if __name__ == "__main__":
     config = load_config()
     ctk.set_default_color_theme(f"themes/{config['theme']}.json")
+    ctk.set_appearance_mode("dark")
     app = PomodoroApp()
     app.mainloop()
