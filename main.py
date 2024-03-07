@@ -7,8 +7,12 @@ from pygame import mixer
 
 BREAK_BTN_COLOR = "#9a9a9a"
 BREAK_HOVER = "#adaaaa"
-RESET_BTN_COLOR = "#cfa911"
+RESET_BTN_COLOR = "#bd9909"
 RESET_HOVER = "#dbb30f"
+
+DEF_POMODORO_MINS = 25
+DEF_SB_MINS = 5
+DEF_LB_MINS = 10
 
 mixer.init()
 beep = mixer.Sound('beep.mp3')
@@ -73,6 +77,28 @@ class StatsFrame(ctk.CTkFrame):
                 self.total_var.set(f"Total Pomodoros:  {data.get('total_pomodoro_sessions', 0)}")
 
 
+class EntryFrame(ctk.CTkFrame):
+    def __init__(self, master, text, config_attr, defvalue, command):
+        super().__init__(master)
+
+        self.label = ctk.CTkLabel(self, text=text)
+        self.label.pack(pady=(10, 10), padx=(10, 10))
+
+        # Inner frame to hold the entry and button
+        self.controls_frame = ctk.CTkFrame(self)
+        self.controls_frame.pack(fill=ctk.X, expand=True, padx=10)
+
+        self.entry_var = ctk.IntVar(value=config.get(config_attr, defvalue))
+        self.entry = ctk.CTkEntry(self.controls_frame, width=35, textvariable=self.entry_var)
+        self.entry.pack(side=ctk.LEFT, fill=ctk.X, expand=True, padx=(0, 10))
+
+        self.set_button = ctk.CTkButton(self.controls_frame, width=120, text="Set", command=command)
+        self.set_button.pack(side=ctk.RIGHT)
+
+    def get(self):
+        return self.entry_var.get()
+
+
 class SettingsFrame(ctk.CTkScrollableFrame):
     def __init__(self, master):
         super().__init__(master)
@@ -80,46 +106,16 @@ class SettingsFrame(ctk.CTkScrollableFrame):
         config = load_config()
 
         # Pomodoro Duration
-        self.pomodoro_label = ctk.CTkLabel(self, text="Pomodoro Duration (mins):")
-        self.pomodoro_label.pack(pady=(10, 0))
-
-        self.pomodoro_row_frame = ctk.CTkFrame(self)
-        self.pomodoro_row_frame.pack(pady=(5, 0))
-
-        self.pomodoro_time_var = ctk.IntVar(value=config.get("pomodoro_time", 25))
-        self.pomodoro_time_entry = ctk.CTkEntry(self.pomodoro_row_frame, width=40, textvariable=self.pomodoro_time_var)
-        self.pomodoro_time_entry.pack(side="left", padx=(0, 5))
-
-        self.pomodoro_set_button = ctk.CTkButton(self.pomodoro_row_frame, text="Set", width=30, fg_color="transparent", border_width=2, command=self.change_pomodoro_time)
-        self.pomodoro_set_button.pack(side="right", padx=(5, 0))
+        self.pomodoro_entry = EntryFrame(self, "Pomodoro Duration (mins):", "pomodoro_time", DEF_POMODORO_MINS, self.change_pomodoro_time)
+        self.pomodoro_entry.pack()
 
         # Short Break Duration
-        self.sb_label = ctk.CTkLabel(self, text="Short Break Duration (mins):")
-        self.sb_label.pack(pady=(20, 0))
-
-        self.sb_row_frame = ctk.CTkFrame(self)
-        self.sb_row_frame.pack(pady=(5, 0))
-
-        self.sb_time_var = ctk.IntVar(value=config.get("short_break_time", 5))
-        self.sb_time_entry = ctk.CTkEntry(self.sb_row_frame, width=40, textvariable=self.sb_time_var)
-        self.sb_time_entry.pack(side="left", padx=(0, 5))
-
-        self.sb_set_button = ctk.CTkButton(self.sb_row_frame, text="Set", width=30, fg_color="transparent", border_width=2, command=self.change_sb_time)
-        self.sb_set_button.pack(side="right", padx=(5, 0))
+        self.sb_entry = EntryFrame(self, "Short Break Duration (mins):", "short_break_time", DEF_SB_MINS, self.change_sb_time)
+        self.sb_entry.pack(pady=(5, 0))
 
         # Long Break Duration
-        self.lb_label = ctk.CTkLabel(self, text="Long Break Duration (mins):")
-        self.lb_label.pack(pady=(20, 0))
-
-        self.lb_row_frame = ctk.CTkFrame(self)
-        self.lb_row_frame.pack(pady=(5, 0))
-
-        self.lb_time_var = ctk.IntVar(value=config.get("long_break_time", 10))
-        self.lb_time_entry = ctk.CTkEntry(self.lb_row_frame, width=40, textvariable=self.lb_time_var)
-        self.lb_time_entry.pack(side="left", padx=(0, 5))
-
-        self.lb_set_button = ctk.CTkButton(self.lb_row_frame, text="Set", width=30, fg_color="transparent", border_width=2, command=self.change_lb_time)
-        self.lb_set_button.pack(side="right", padx=(5, 0))
+        self.lb_entry = EntryFrame(self, "Long Break Duration (mins):", "long_break_time", DEF_LB_MINS, self.change_lb_time)
+        self.lb_entry.pack(pady=(5, 0))
 
         # Selecting theme
         self.theme_label = ctk.CTkLabel(self, text="Select Theme:")
@@ -143,25 +139,24 @@ class SettingsFrame(ctk.CTkScrollableFrame):
         self.change_volume(config.get('volume', 10))
 
         # Play Beep button
-        self.beep_button = ctk.CTkButton(self, text="Play", fg_color="transparent",
-                                          border_width=2, width=70, command=beep.play)
+        self.beep_button = ctk.CTkButton(self, text="Play", width=70, command=beep.play)
         self.beep_button.pack(pady=(15, 0))
 
-    def change_time(self, time_var, config_param):
-        time = time_var.get()
+    def change_time(self, entry, config_param):
+        time = entry.get()
         if time and time > 0:
             config = load_config()
             config[config_param] = time
             save_config(config)
 
     def change_pomodoro_time(self):
-        self.change_time(self.pomodoro_time_var, "pomodoro_time")
+        self.change_time(self.pomodoro_entry, "pomodoro_time")
 
     def change_sb_time(self):
-        self.change_time(self.sb_time_var, "short_break_time")
+        self.change_time(self.sb_entry, "short_break_time")
 
     def change_lb_time(self):
-        self.change_time(self.lb_time_var, "long_break_time")
+        self.change_time(self.lb_entry, "long_break_time")
 
     def change_theme(self, theme):
         config = load_config()
