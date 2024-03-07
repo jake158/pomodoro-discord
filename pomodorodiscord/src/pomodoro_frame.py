@@ -1,8 +1,10 @@
 import os
 import json
+import threading
 import customtkinter as ctk
 from datetime import datetime
 from src.utils import load_config, DEF_POMODORO_MINS, DEF_SB_MINS, DEF_LB_MINS, beep
+from src.richpresence import RichPresence
 
 BREAK_BTN_COLOR = "#9a9a9a"
 BREAK_HOVER = "#adaaaa"
@@ -15,6 +17,9 @@ class PomodoroFrame(ctk.CTkFrame):
         super().__init__(master)
         self.data_file = 'data.json'
         config = load_config()
+
+        # Rich presence in separate thread
+        threading.Thread(target=self.init_rpc, daemon=True).start()
 
         # Helper text that appears when a break is running
         self.break_text = ctk.StringVar(value="")
@@ -47,6 +52,9 @@ class PomodoroFrame(ctk.CTkFrame):
         self.break_running = False
         self.next_timer_update = None
         self.remaining_time = self.pomodoro_time
+
+    def init_rpc(self):
+        self.rpc = RichPresence()
 
     def start_timer(self):
         if self.next_timer_update:
