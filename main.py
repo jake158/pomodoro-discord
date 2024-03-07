@@ -5,6 +5,7 @@ import customtkinter as ctk
 from datetime import datetime
 from pygame import mixer
 
+
 BREAK_BTN_COLOR = "#9a9a9a"
 BREAK_HOVER = "#adaaaa"
 RESET_BTN_COLOR = "#bd9909"
@@ -18,18 +19,24 @@ mixer.init()
 beep = mixer.Sound('beep.mp3')
 
 
-def load_config():
+def load_file(filename, on_no_file=None):
     try:
-        with open('config.json', 'r') as config_file:
-            config = json.load(config_file)
+        with open(filename, 'r') as file:
+            data = json.load(file)
     except FileNotFoundError:
-        config = {'theme': 'Default'}
+        return on_no_file
 
-    return config
+    return data
+
+def load_config():
+    return load_file('config.json', {'theme': 'Default'})
+
+def load_data():
+    return load_file('data.json', None)
 
 def save_config(config):
     with open('config.json', 'w') as config_file:
-        json.dump(config, config_file)
+        json.dump(config, config_file, indent=4)
 
 def reload_app():
     os.execl(sys.executable, sys.executable, *sys.argv)
@@ -41,18 +48,15 @@ class StatsFrame(ctk.CTkFrame):
         self.data_file = 'data.json'
 
         self.total_today_var = ctk.StringVar(value="Pomodoros Today:  0")
-        self.total_today = ctk.CTkLabel(self, textvariable=self.total_today_var, 
-                                              font=("Helvetica", 16, "bold"), anchor="w")
+        self.total_today = ctk.CTkLabel(self, textvariable=self.total_today_var, font=("Helvetica", 16, "bold"), anchor="w")
         self.total_today.pack(padx=20, pady=(20, 0), fill="x")
 
         self.total_hours_var = ctk.StringVar(value="Total Hours Studied:  0")
-        self.total_hours = ctk.CTkLabel(self, textvariable=self.total_hours_var, 
-                                              font=("Helvetica", 16, "bold"), anchor="w")
+        self.total_hours = ctk.CTkLabel(self, textvariable=self.total_hours_var, font=("Helvetica", 16, "bold"), anchor="w")
         self.total_hours.pack(padx=20, pady=(20, 0), fill="x")
 
         self.total_var = ctk.StringVar(value="Total Pomodoros:  0")
-        self.total = ctk.CTkLabel(self, textvariable=self.total_var, 
-                                              font=("Helvetica", 16, "bold"), anchor="w")
+        self.total = ctk.CTkLabel(self, textvariable=self.total_var, font=("Helvetica", 16, "bold"), anchor="w")
         self.total.pack(padx=20, pady=(20, 0), fill="x")
 
         self.update_stats = ctk.CTkButton(self, text="Update", width=90, font=("Roboto", 16), command=self.load_stats)
@@ -61,20 +65,21 @@ class StatsFrame(ctk.CTkFrame):
         self.load_stats()
 
     def load_stats(self):
-        if os.path.exists(self.data_file):
-            with open(self.data_file, 'r') as file:
-                data = json.load(file)
-                current_date = datetime.now().strftime("%Y-%m-%d")
-                total_today = data.get('sessions_by_date', {}).get(current_date, 0)
+        data = load_data()
+        if not data:
+            return
 
-                self.total_today_var.set(f"Pomodoros Today:  {total_today}")
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        total_today = data.get('sessions_by_date', {}).get(current_date, 0)
 
-                total_seconds_studied = data.get('total_seconds_studied', 0)
-                total_hours = total_seconds_studied / 3600
+        self.total_today_var.set(f"Pomodoros Today:  {total_today}")
 
-                self.total_hours_var.set(f"Total Hours Studied:  {total_hours:.1f}")
+        total_seconds_studied = data.get('total_seconds_studied', 0)
+        total_hours = total_seconds_studied / 3600
 
-                self.total_var.set(f"Total Pomodoros:  {data.get('total_pomodoro_sessions', 0)}")
+        self.total_hours_var.set(f"Total Hours Studied:  {total_hours:.1f}")
+
+        self.total_var.set(f"Total Pomodoros:  {data.get('total_pomodoro_sessions', 0)}")
 
 
 class EntryFrame(ctk.CTkFrame):
@@ -168,7 +173,7 @@ class SettingsFrame(ctk.CTkScrollableFrame):
         volume = float(volume) / 100
         beep.set_volume(volume)
         config = load_config()
-        config['volume'] = volume * 100
+        config['volume'] = int(volume * 100)
         save_config(config)
 
 
@@ -177,8 +182,8 @@ class PomodoroFrame(ctk.CTkFrame):
         super().__init__(master)
         self.data_file = 'data.json'
         config = load_config()
-        # TODO: fix crutch
-        self.pomodoro_time = config.get("pomodoro_time", 25) * 60
+
+        self.pomodoro_time = config.get("pomodoro_time", DEF_POMODORO_MINS) * 60
 
         minutes, seconds = divmod(self.pomodoro_time, 60)
         self.timer_display = ctk.CTkLabel(self, text=f"{minutes:02d}:{seconds:02d}", font=("Helvetica", 58))
@@ -198,6 +203,7 @@ class PomodoroFrame(ctk.CTkFrame):
         self.reset_button.pack()
 
         self.running = False
+        self.break_running = False
         self.next_timer_update = None
         self.remaining_time = self.pomodoro_time
 
@@ -214,7 +220,8 @@ class PomodoroFrame(ctk.CTkFrame):
     def update_timer(self):
         if self.running and self.remaining_time > 0:
             self.remaining_time -= 1
-            self.track_second()
+            if not self.break_running:
+                self.track_second()
             minutes, seconds = divmod(self.remaining_time, 60)
             self.timer_display.configure(text=f"{minutes:02d}:{seconds:02d}")
             self.next_timer_update = self.after(1000, self.update_timer)
@@ -232,14 +239,15 @@ class PomodoroFrame(ctk.CTkFrame):
         with open(self.data_file, 'w') as file:
             json.dump(data, file, indent=4)
 
-    def reset(self, to:str="pomodoro_time", default:int=25):
+    def reset(self, to:str="pomodoro_time", default:int=DEF_POMODORO_MINS):
         self.running = False
+        self.break_running = False
         if self.next_timer_update:
             self.after_cancel(self.next_timer_update)
             self.next_timer_update = None
 
         config = load_config()
-        # TODO: fix crutch
+        # TODO: Make cleaner?
         self.pomodoro_time = int(config.get(to, default) * 60)
 
         # Reset the timer
@@ -253,6 +261,7 @@ class PomodoroFrame(ctk.CTkFrame):
  
         current_date = datetime.now().strftime("%Y-%m-%d")
         
+        # TODO: I don't like the if check every second
         if os.path.exists(self.data_file):
             with open(self.data_file, 'r') as file:
                 data = json.load(file)
@@ -274,11 +283,13 @@ class PomodoroFrame(ctk.CTkFrame):
         beep.play() 
 
     def short_break(self):
-        self.reset(to="short_break_time", default=5)
+        self.reset(to="short_break_time", default=DEF_SB_MINS)
+        self.break_running = True
         self.start_timer()
     
     def long_break(self):
-        self.reset(to="long_break_time", default=10)
+        self.reset(to="long_break_time", default=DEF_LB_MINS)
+        self.break_running = True
         self.start_timer()
 
 
