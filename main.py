@@ -183,12 +183,19 @@ class PomodoroFrame(ctk.CTkFrame):
         self.data_file = 'data.json'
         config = load_config()
 
+        # Helper text that appears when a break is running
+        self.break_text = ctk.StringVar(value="")
+        self.break_label = ctk.CTkLabel(self, textvariable=self.break_text, font=("Roboto", 15))
+        self.break_label.pack(pady=(5, 0))
+
+        # Display
         self.pomodoro_time = config.get("pomodoro_time", DEF_POMODORO_MINS) * 60
 
         minutes, seconds = divmod(self.pomodoro_time, 60)
         self.timer_display = ctk.CTkLabel(self, text=f"{minutes:02d}:{seconds:02d}", font=("Helvetica", 58))
-        self.timer_display.pack(pady=40)
+        self.timer_display.pack(pady=(15, 41))
 
+        # Controls
         self.start_button = ctk.CTkButton(self, text="Start", font=("Roboto", 17), border_width=2, command=self.start_timer)
         self.start_color = self.start_button.cget("fg_color")
         self.start_button.pack(pady=(0, 10))
@@ -202,6 +209,7 @@ class PomodoroFrame(ctk.CTkFrame):
         self.reset_button = ctk.CTkButton(self, text="Reset", font=("Roboto", 17), fg_color=RESET_BTN_COLOR, hover_color=RESET_HOVER, command=self.reset)
         self.reset_button.pack()
 
+        # State
         self.running = False
         self.break_running = False
         self.next_timer_update = None
@@ -242,6 +250,8 @@ class PomodoroFrame(ctk.CTkFrame):
     def reset(self, to:str="pomodoro_time", default:int=DEF_POMODORO_MINS):
         self.running = False
         self.break_running = False
+        self.break_text.set("")
+
         if self.next_timer_update:
             self.after_cancel(self.next_timer_update)
             self.next_timer_update = None
@@ -257,7 +267,15 @@ class PomodoroFrame(ctk.CTkFrame):
         self.start_button.configure(text="Start", fg_color=self.start_color)
 
     def session_ended(self):
+        was_break = self.break_running
+        # Reset sets break_running to false
+        # TODO: surely there is a better way
+
         self.reset()
+        beep.play() 
+
+        if was_break:
+            return
  
         current_date = datetime.now().strftime("%Y-%m-%d")
         
@@ -280,16 +298,17 @@ class PomodoroFrame(ctk.CTkFrame):
         with open(self.data_file, 'w') as file:
             json.dump(data, file, indent=4)
 
-        beep.play() 
 
     def short_break(self):
         self.reset(to="short_break_time", default=DEF_SB_MINS)
         self.break_running = True
+        self.break_text.set("Short break")
         self.start_timer()
     
     def long_break(self):
         self.reset(to="long_break_time", default=DEF_LB_MINS)
         self.break_running = True
+        self.break_text.set("Long break")
         self.start_timer()
 
 
