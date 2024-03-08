@@ -1,8 +1,9 @@
 import os
 import json
+import time
 import threading
 import customtkinter as ctk
-from datetime import datetime
+from datetime import datetime, timedelta
 from src.utils import load_config, DEF_POMODORO_MINS, DEF_SB_MINS, DEF_LB_MINS, beep
 from src.richpresence import RichPresence
 
@@ -52,13 +53,37 @@ class PomodoroFrame(ctk.CTkFrame):
         self.break_running = False
         self.next_timer_update = None
         self.remaining_time = self.pomodoro_time
+        # States used for Rich Presence
+        self.start_time_timestamp = None
+        self.end_time_timestamp = None
+        self.session_counter = 0
 
     def init_rpc(self):
         self.rpc = RichPresence()
+        self.rpc_thread = threading.Thread(target=self.update_rpc, daemon=True)
+        self.rpc_thread.start()
+
+    def update_rpc(self):
+        while True:
+            if self.break_running:
+                self.rpc.break_state(self.start_time_timestamp, self.end_time_timestamp)
+            elif self.running:
+                self.rpc.running_state(self.session_counter + 1, self.start_time_timestamp, self.end_time_timestamp)
+            else:
+                self.rpc.default_state()
+
+            # Discord-imposed rate limit
+            time.sleep(15)
 
     def start_timer(self):
         if self.next_timer_update:
             self.after_cancel(self.next_timer_update)
+
+        # Rich presence info
+        start_time = datetime.now()
+        end_time = start_time + timedelta(seconds=self.remaining_time)
+        self.start_time_timestamp = start_time.timestamp()
+        self.end_time_timestamp = end_time.timestamp()
 
         self.running = not self.running
         btn_text = "Pause" if self.running else "Resume"
@@ -78,6 +103,7 @@ class PomodoroFrame(ctk.CTkFrame):
             self.session_ended()
 
     def track_second(self):
+        # TODO: I don't like the if check every second
         if os.path.exists(self.data_file):
             with open(self.data_file, 'r') as file:
                 data = json.load(file)
@@ -117,10 +143,11 @@ class PomodoroFrame(ctk.CTkFrame):
 
         if was_break:
             return
+
+        self.session_counter += 1
  
         current_date = datetime.now().strftime("%Y-%m-%d")
         
-        # TODO: I don't like the if check every second
         if os.path.exists(self.data_file):
             with open(self.data_file, 'r') as file:
                 data = json.load(file)
@@ -151,4 +178,3 @@ class PomodoroFrame(ctk.CTkFrame):
         self.break_running = True
         self.break_text.set("Long break")
         self.start_timer()
-
