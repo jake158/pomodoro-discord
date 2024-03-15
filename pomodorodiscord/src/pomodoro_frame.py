@@ -4,13 +4,13 @@ import time
 import threading
 import customtkinter as ctk
 from datetime import datetime, timedelta
-from src.utils import load_config, DEF_POMODORO_MINS, DEF_SB_MINS, DEF_LB_MINS, beep
+from src.utils import load_config, DEF_POMODORO_MINS, DEF_SB_MINS, DEF_LB_MINS, DEF_SB_BEFORE_L, beep
 from src.richpresence import RichPresence
 
 BREAK_BTN_COLOR = "#9a9a9a"
 BREAK_HOVER = "#adaaaa"
-RESET_BTN_COLOR = "#bd9909"
-RESET_HOVER = "#dbb30f"
+RESET_BTN_COLOR = "#cca508"
+RESET_HOVER = "#e3b707"
 
 
 class PomodoroFrame(ctk.CTkFrame):
@@ -53,6 +53,13 @@ class PomodoroFrame(ctk.CTkFrame):
         self.break_running = False
         self.next_timer_update = None
         self.remaining_time = self.pomodoro_time
+
+        # Automatic break cycling states
+        self.auto_break_cycling = config.get("auto_break_cycling", False)
+        self.short_breaks_before_long = config.get("short_breaks_before_long", DEF_SB_BEFORE_L)
+        self.short_break_running = False
+        self.short_break_counter = 0
+
         # States used for Rich Presence
         self.start_time_timestamp = None
         self.end_time_timestamp = None
@@ -117,6 +124,7 @@ class PomodoroFrame(ctk.CTkFrame):
     def reset(self, to:str="pomodoro_time", default:int=DEF_POMODORO_MINS):
         self.running = False
         self.break_running = False
+        self.short_break_running = False
         self.break_text.set("")
 
         if self.next_timer_update:
@@ -126,6 +134,8 @@ class PomodoroFrame(ctk.CTkFrame):
         config = load_config()
         # TODO: Make cleaner?
         self.pomodoro_time = int(config.get(to, default) * 60)
+        self.auto_break_cycling = config.get("auto_break_cycling", False)
+        self.short_breaks_before_long = config.get("short_breaks_before_long", DEF_SB_BEFORE_L)
 
         # Reset the timer
         self.remaining_time = self.pomodoro_time
@@ -134,14 +144,17 @@ class PomodoroFrame(ctk.CTkFrame):
         self.start_button.configure(text="Start", fg_color=self.start_color)
 
     def session_ended(self):
+        # TODO: this function looks vile
         was_break = self.break_running
-        # Reset sets break_running to false
-        # TODO: surely there is a better way
-
+        was_short_break = self.short_break_running
         self.reset()
         beep.play() 
 
+        self.short_break_counter += 1 if was_short_break else 0
+
         if was_break:
+            if self.auto_break_cycling:
+                self.start_timer()
             return
 
         self.session_counter += 1
@@ -166,10 +179,17 @@ class PomodoroFrame(ctk.CTkFrame):
         with open(self.data_file, 'w') as file:
             json.dump(data, file, indent=4)
 
+        if not was_break and self.auto_break_cycling:
+            if self.short_break_counter >= self.short_breaks_before_long:
+                self.short_break_counter = 0  # Reset counter when long break
+                self.long_break()
+            else:
+                self.short_break()
 
     def short_break(self):
         self.reset(to="short_break_time", default=DEF_SB_MINS)
         self.break_running = True
+        self.short_break_running = True
         self.break_text.set("Short break")
         self.start_timer()
     
