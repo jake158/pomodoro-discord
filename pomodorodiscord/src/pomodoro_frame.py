@@ -135,6 +135,7 @@ class PomodoroFrame(ctk.CTkFrame):
         # TODO: Make cleaner?
         self.pomodoro_time = int(config.get(to, default) * 60)
         self.auto_break_cycling = config.get("auto_break_cycling", False)
+        self.short_break_counter = 0 if not self.auto_break_cycling else self.short_break_counter
         self.short_breaks_before_long = config.get("short_breaks_before_long", DEF_SB_BEFORE_L)
 
         # Reset the timer
