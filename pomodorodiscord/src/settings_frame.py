@@ -1,6 +1,6 @@
 import os
 import customtkinter as ctk
-from src.utils import load_config, save_config, reload_app, DEF_POMODORO_MINS, DEF_SB_MINS, DEF_LB_MINS, beep
+from src.utils import load_config, save_config, reload_app, DEF_POMODORO_MINS, DEF_SB_MINS, DEF_LB_MINS, DEF_SB_BEFORE_L, beep
 
 
 class EntryFrame(ctk.CTkFrame):
@@ -37,7 +37,7 @@ class SettingsFrame(ctk.CTkScrollableFrame):
         self.abcycling_switch.pack(pady=(10, 0))
 
         # Short Breaks Before Long Break
-        self.sb_before_l_entry = EntryFrame(self, "Short breaks before\nlong break (if auto cycling):", config, "short_breaks_before_long", 3, self.change_sb_before_l)
+        self.sb_before_l_entry = EntryFrame(self, "Short breaks before\nlong break (if auto cycling):", config, "short_breaks_before_long", DEF_SB_BEFORE_L, self.change_sb_before_l)
         self.sb_before_l_entry.pack(pady=(10, 0))
 
         # Pomodoro Duration

@@ -9,7 +9,9 @@ beep = mixer.Sound('sounds/beep.mp3')
 # Until user sets custom pomodoro, short break, long break durations, this gets set
 DEF_POMODORO_MINS = 25
 DEF_SB_MINS = 5
-DEF_LB_MINS = 10
+DEF_LB_MINS = 15
+# Default amount of short breaks before a long break (for auto break cycling)
+DEF_SB_BEFORE_L = 3
 
 
 def load_file(filename, on_no_file=None):
