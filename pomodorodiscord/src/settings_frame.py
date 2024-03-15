@@ -31,9 +31,18 @@ class SettingsFrame(ctk.CTkScrollableFrame):
         self.themes_dir = 'themes'
         config = load_config()
 
+        # Automatic Break Cycling
+        self.abcycling_var = ctk.IntVar(value=config.get("auto_break_cycling", 0))
+        self.abcycling_switch = ctk.CTkCheckBox(self, text=" Automatic break cycling", border_width=2, variable=self.abcycling_var, onvalue=1, offvalue=0, command=self.change_abcycling)
+        self.abcycling_switch.pack(pady=(10, 0))
+
+        # Short Breaks Before Long Break
+        self.sb_before_l_entry = EntryFrame(self, "Short breaks before\nlong break (if auto cycling):", config, "short_breaks_before_long", 3, self.change_sb_before_l)
+        self.sb_before_l_entry.pack(pady=(10, 0))
+
         # Pomodoro Duration
         self.pomodoro_entry = EntryFrame(self, "Pomodoro Duration (mins):", config, "pomodoro_time", DEF_POMODORO_MINS, self.change_pomodoro_time)
-        self.pomodoro_entry.pack()
+        self.pomodoro_entry.pack(pady=(5, 0))
 
         # Short Break Duration
         self.sb_entry = EntryFrame(self, "Short Break Duration (mins):", config, "short_break_time", DEF_SB_MINS, self.change_sb_time)
@@ -68,12 +77,20 @@ class SettingsFrame(ctk.CTkScrollableFrame):
         self.beep_button = ctk.CTkButton(self, text="Play", width=70, command=beep.play)
         self.beep_button.pack(pady=(15, 0))
 
+    def change_abcycling(self):
+        config = load_config()
+        config["auto_break_cycling"] = self.abcycling_var.get()
+        save_config(config)
+
     def change_time(self, entry, config_param):
         time = entry.get()
         if time and time > 0:
             config = load_config()
             config[config_param] = time
             save_config(config)
+
+    def change_sb_before_l(self):
+        self.change_time(self.sb_before_l_entry, "short_breaks_before_long")
 
     def change_pomodoro_time(self):
         self.change_time(self.pomodoro_entry, "pomodoro_time")
@@ -96,4 +113,3 @@ class SettingsFrame(ctk.CTkScrollableFrame):
         config = load_config()
         config['volume'] = int(volume * 100)
         save_config(config)
-
