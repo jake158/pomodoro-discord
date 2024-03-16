@@ -12,15 +12,13 @@ BREAK_HOVER = "#adaaaa"
 RESET_BTN_COLOR = "#cca508"
 RESET_HOVER = "#e3b707"
 
+#TODO: clean everything
 
 class PomodoroFrame(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
         self.data_file = 'data.json'
         config = load_config()
-
-        # Rich presence in separate thread
-        threading.Thread(target=self.init_rpc, daemon=True).start()
 
         # Helper text that appears when a break is running
         self.break_text = ctk.StringVar(value="")
@@ -54,6 +52,9 @@ class PomodoroFrame(ctk.CTkFrame):
         self.next_timer_update = None
         self.remaining_time = self.pomodoro_time
 
+        # For tracking seconds
+        self.date_started = datetime.now().strftime("%Y-%m-%d")
+
         # Automatic break cycling states
         self.auto_break_cycling = config.get("auto_break_cycling", False)
         self.short_breaks_before_long = config.get("short_breaks_before_long", DEF_SB_BEFORE_L)
@@ -64,6 +65,9 @@ class PomodoroFrame(ctk.CTkFrame):
         self.start_time_timestamp = None
         self.end_time_timestamp = None
         self.session_counter = 0
+
+        # Initialize rich presence in separate thread
+        threading.Thread(target=self.init_rpc, daemon=True).start()
 
     def init_rpc(self):
         self.rpc = RichPresence()
@@ -92,6 +96,9 @@ class PomodoroFrame(ctk.CTkFrame):
         self.start_time_timestamp = start_time.timestamp()
         self.end_time_timestamp = end_time.timestamp()
 
+        # For tracking seconds
+        self.date_started = datetime.now().strftime("%Y-%m-%d")
+
         self.running = not self.running
         btn_text = "Pause" if self.running else "Resume"
         btn_fg = "transparent" if self.running else self.start_color
@@ -110,14 +117,25 @@ class PomodoroFrame(ctk.CTkFrame):
             self.session_ended()
 
     def track_second(self):
-        # TODO: I don't like the if check every second
+        current_date = self.date_started
+
         if os.path.exists(self.data_file):
             with open(self.data_file, 'r') as file:
                 data = json.load(file)
                 data['total_seconds_studied'] += 1
+                
+                if 'seconds_by_date' not in data:
+                    data['seconds_by_date'] = {}
+                if current_date not in data['seconds_by_date']:
+                    data['seconds_by_date'][current_date] = 0
+                    
+                data['seconds_by_date'][current_date] += 1
         else:
-            data = {'total_seconds_studied': 0}
-        
+            data = {
+                'total_seconds_studied': 1,
+                'seconds_by_date': {current_date: 1}
+            }
+
         with open(self.data_file, 'w') as file:
             json.dump(data, file, indent=4)
 
