@@ -1,5 +1,3 @@
-import os
-import json
 import time
 import threading
 import customtkinter as ctk
@@ -37,7 +35,7 @@ class PomodoroFrame(ctk.CTkFrame):
         self.timer_display.pack(pady=(15, 41))
 
         # Controls
-        self.start_button = ctk.CTkButton(self, text="Start", font=("Roboto", 17), border_width=2, command=self.start_timer)
+        self.start_button = ctk.CTkButton(self, text="Start", font=("Roboto", 17), border_width=2, command=self.toggle_timer)
         self.start_color = self.start_button.cget("fg_color")
         self.start_button.pack(pady=(0, 10))
 
@@ -58,8 +56,8 @@ class PomodoroFrame(ctk.CTkFrame):
         self.next_timer_update = None
         self.remaining_time = self.pomodoro_time
 
-        # Tracking seconds
-        self.date_started = datetime.now().strftime("%Y-%m-%d")
+        # Tracking time studied today in track_second()
+        self.current_date = datetime.now().strftime("%Y-%m-%d")
 
         # Automatic break cycling
         self.auto_break_cycling = config.get("auto_break_cycling", False)
@@ -73,6 +71,7 @@ class PomodoroFrame(ctk.CTkFrame):
         self.session_counter = 0
 
     def initialize_rpc(self):
+        """Start the rich presence in a separate thread"""
         self.rpc = RichPresence()
         self.rpc_thread = threading.Thread(target=self.update_rpc, daemon=True)
         self.rpc_thread.start()
@@ -89,18 +88,17 @@ class PomodoroFrame(ctk.CTkFrame):
             # Discord-imposed rate limit
             time.sleep(15)
 
-    def start_timer(self):
+    def toggle_timer(self):
         if self.next_timer_update:
             self.after_cancel(self.next_timer_update)
 
         # Rich presence info
-        start_time = datetime.now()
-        end_time = start_time + timedelta(seconds=self.remaining_time)
-        self.start_time_timestamp = start_time.timestamp()
+        now = datetime.now()
+        end_time = now + timedelta(seconds=self.remaining_time)
+        self.start_time_timestamp = now.timestamp()
         self.end_time_timestamp = end_time.timestamp()
-
-        # For tracking seconds
-        self.date_started = datetime.now().strftime("%Y-%m-%d")
+        # For track_second()
+        self.current_date = now.strftime("%Y-%m-%d")
 
         self.running = not self.running
         btn_text = "Pause" if self.running else "Resume"
@@ -120,23 +118,11 @@ class PomodoroFrame(ctk.CTkFrame):
             self.session_ended()
 
     def track_second(self):
-        current_date = self.date_started
+        current_date = self.current_date
         data = load_data()
-        if data is not None:
-            data['total_seconds_studied'] += 1
-            
-            if 'seconds_by_date' not in data:
-                data['seconds_by_date'] = {}
-            if current_date not in data['seconds_by_date']:
-                data['seconds_by_date'][current_date] = 0
-                
-            data['seconds_by_date'][current_date] += 1
-        else:
-            data = {
-                'total_seconds_studied': 1,
-                'seconds_by_date': {current_date: 1}
-            }
 
+        data['total_seconds_studied'] += 1
+        data['seconds_by_date'][current_date] = data['seconds_by_date'].get(current_date, 0) + 1
         save_data(data)
 
     def reset(self, to:str="pomodoro_time", default:int=DEF_POMODORO_MINS):
@@ -178,23 +164,11 @@ class PomodoroFrame(ctk.CTkFrame):
 
         self.session_counter += 1
  
-        current_date = datetime.now().strftime("%Y-%m-%d")
-
+        current_date = self.current_date
         data = load_data() 
 
-        if data is not None:
-            data['total_pomodoro_sessions'] = data.get('total_pomodoro_sessions', 0) + 1
-
-            if 'sessions_by_date' not in data:
-                data['sessions_by_date'] = {}
-            data['sessions_by_date'][current_date] = data['sessions_by_date'].get(current_date, 0) + 1
-        else:
-            data = {
-                'total_seconds_studied': 0, 
-                'total_pomodoro_sessions': 1,
-                'sessions_by_date': {current_date: 1}
-            }
-
+        data['total_pomodoro_sessions'] += 1
+        data['sessions_by_date'][current_date] = data['sessions_by_date'].get(current_date, 0) + 1
         save_data(data)
 
         if not was_break and self.auto_break_cycling:
@@ -209,10 +183,10 @@ class PomodoroFrame(ctk.CTkFrame):
         self.break_running = True
         self.short_break_running = True
         self.break_text.set("Short break")
-        self.start_timer()
+        self.toggle_timer()
     
     def long_break(self):
         self.reset(to="long_break_time", default=DEF_LB_MINS)
         self.break_running = True
         self.break_text.set("Long break")
-        self.start_timer()
+        self.toggle_timer()
