@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from datetime import datetime
 from src.utils import load_data
+from src.graphs import graph_pomodoro_sessions, graph_hours_studied
 
 
 class StatisticDisplay(ctk.CTkFrame):
@@ -9,7 +10,7 @@ class StatisticDisplay(ctk.CTkFrame):
         self.pack(pady=(10, 15), fill="x")
 
         # Title Label
-        self.title_label = ctk.CTkLabel(self, text=title, font=("Helvetica", title_font, "bold"), anchor="n")
+        self.title_label = ctk.CTkLabel(self, text=title, font=("Helvetica", title_font), anchor="n")
         self.title_label.pack(fill="x")
 
         # Value Label
@@ -27,7 +28,7 @@ class StatsFrame(ctk.CTkScrollableFrame):
 
         # Time Studied Today
         self.time_today = StatisticDisplay(self, "Time Studied Today:")
-        
+
         # Pomodoros Today
         self.pomodoros_today = StatisticDisplay(self, "Pomodoros Today:")
 
@@ -39,7 +40,18 @@ class StatsFrame(ctk.CTkScrollableFrame):
 
         # Update Button
         self.update_stats = ctk.CTkButton(self, text="Update", width=90, font=("Roboto", 16), command=self.load_stats)
-        self.update_stats.pack(pady=(20, 0))
+        self.update_stats.pack(pady=(10, 0))
+
+        # Graphs
+        self.graph_label_1 = ctk.CTkLabel(self, text="Pomodoro Sessions Graph", font=("Helvetica", 18))
+        self.graph_label_1.pack(pady=(32, 8))
+        self.graph_button_1 = ctk.CTkButton(self, text="Show", width=90, font=("Roboto", 16), command=self.show_sessions_graph)
+        self.graph_button_1.pack()
+
+        self.graph_label_2 = ctk.CTkLabel(self, text="Hours Studied Graph", font=("Helvetica", 18))
+        self.graph_label_2.pack(pady=(20, 8))
+        self.graph_button_2 = ctk.CTkButton(self, text="Show", width=90, font=("Roboto", 16), command=self.show_hours_graph)
+        self.graph_button_2.pack()
 
         self.load_stats()
 
@@ -67,7 +79,13 @@ class StatsFrame(ctk.CTkScrollableFrame):
         if total_hours < 1:
             self.total_hours.set_value(f"{total_seconds // 60} minute{'s' if total_seconds // 60 != 1 else ''}")
         else:
-            self.total_hours.set_value(f"{total_today_hours:.1f} hours")
+            self.total_hours.set_value(f"{total_hours:.1f} hours")
 
         total_pomodoros = data.get('total_pomodoro_sessions', 0)
         self.total_pomodoros.set_value(f"{total_pomodoros} session{'s' if total_pomodoros != 1 else ''}")
+
+    def show_sessions_graph(self):
+        graph_pomodoro_sessions(load_data())
+
+    def show_hours_graph(self):
+        graph_hours_studied(load_data())
