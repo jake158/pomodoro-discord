@@ -4,7 +4,7 @@ import time
 import threading
 import customtkinter as ctk
 from datetime import datetime, timedelta
-from src.utils import load_config, DEF_POMODORO_MINS, DEF_SB_MINS, DEF_LB_MINS, DEF_SB_BEFORE_L, beep
+from src.utils import load_config, load_data, save_data, DEF_POMODORO_MINS, DEF_SB_MINS, DEF_LB_MINS, DEF_SB_BEFORE_L, beep
 from src.richpresence import RichPresence
 
 BREAK_BTN_COLOR = "#9a9a9a"
@@ -12,14 +12,19 @@ BREAK_HOVER = "#adaaaa"
 RESET_BTN_COLOR = "#cca508"
 RESET_HOVER = "#e3b707"
 
-#TODO: clean everything
+# TODO: clean everything
 
 class PomodoroFrame(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
-        self.data_file = 'data.json'
         config = load_config()
 
+        self.initialize_ui(config)
+        self.initialize_state(config)
+        threading.Thread(target=self.initialize_rpc, daemon=True).start()
+
+    def initialize_ui(self, config):
+        """Set up the UI components for the Pomodoro timer""" 
         # Helper text that appears when a break is running
         self.break_text = ctk.StringVar(value="")
         self.break_label = ctk.CTkLabel(self, textvariable=self.break_text, font=("Roboto", 15))
@@ -27,7 +32,6 @@ class PomodoroFrame(ctk.CTkFrame):
 
         # Display
         self.pomodoro_time = config.get("pomodoro_time", DEF_POMODORO_MINS) * 60
-
         minutes, seconds = divmod(self.pomodoro_time, 60)
         self.timer_display = ctk.CTkLabel(self, text=f"{minutes:02d}:{seconds:02d}", font=("Helvetica", 58))
         self.timer_display.pack(pady=(15, 41))
@@ -46,30 +50,29 @@ class PomodoroFrame(ctk.CTkFrame):
         self.reset_button = ctk.CTkButton(self, text="Reset", font=("Roboto", 17), fg_color=RESET_BTN_COLOR, hover_color=RESET_HOVER, command=self.reset)
         self.reset_button.pack()
 
-        # State
+    def initialize_state(self, config):
+        """Initialize the state variables"""
+        # Main
         self.running = False
         self.break_running = False
         self.next_timer_update = None
         self.remaining_time = self.pomodoro_time
 
-        # For tracking seconds
+        # Tracking seconds
         self.date_started = datetime.now().strftime("%Y-%m-%d")
 
-        # Automatic break cycling states
+        # Automatic break cycling
         self.auto_break_cycling = config.get("auto_break_cycling", False)
         self.short_breaks_before_long = config.get("short_breaks_before_long", DEF_SB_BEFORE_L)
         self.short_break_running = False
         self.short_break_counter = 0
 
-        # States used for Rich Presence
+        # Rich Presence
         self.start_time_timestamp = None
         self.end_time_timestamp = None
         self.session_counter = 0
 
-        # Initialize rich presence in separate thread
-        threading.Thread(target=self.init_rpc, daemon=True).start()
-
-    def init_rpc(self):
+    def initialize_rpc(self):
         self.rpc = RichPresence()
         self.rpc_thread = threading.Thread(target=self.update_rpc, daemon=True)
         self.rpc_thread.start()
@@ -118,26 +121,23 @@ class PomodoroFrame(ctk.CTkFrame):
 
     def track_second(self):
         current_date = self.date_started
-
-        if os.path.exists(self.data_file):
-            with open(self.data_file, 'r') as file:
-                data = json.load(file)
-                data['total_seconds_studied'] += 1
+        data = load_data()
+        if data is not None:
+            data['total_seconds_studied'] += 1
+            
+            if 'seconds_by_date' not in data:
+                data['seconds_by_date'] = {}
+            if current_date not in data['seconds_by_date']:
+                data['seconds_by_date'][current_date] = 0
                 
-                if 'seconds_by_date' not in data:
-                    data['seconds_by_date'] = {}
-                if current_date not in data['seconds_by_date']:
-                    data['seconds_by_date'][current_date] = 0
-                    
-                data['seconds_by_date'][current_date] += 1
+            data['seconds_by_date'][current_date] += 1
         else:
             data = {
                 'total_seconds_studied': 1,
                 'seconds_by_date': {current_date: 1}
             }
 
-        with open(self.data_file, 'w') as file:
-            json.dump(data, file, indent=4)
+        save_data(data)
 
     def reset(self, to:str="pomodoro_time", default:int=DEF_POMODORO_MINS):
         self.running = False
@@ -179,24 +179,23 @@ class PomodoroFrame(ctk.CTkFrame):
         self.session_counter += 1
  
         current_date = datetime.now().strftime("%Y-%m-%d")
-        
-        if os.path.exists(self.data_file):
-            with open(self.data_file, 'r') as file:
-                data = json.load(file)
-                data['total_pomodoro_sessions'] = data.get('total_pomodoro_sessions', 0) + 1
 
-                if 'sessions_by_date' not in data:
-                    data['sessions_by_date'] = {}
-                data['sessions_by_date'][current_date] = data['sessions_by_date'].get(current_date, 0) + 1
+        data = load_data() 
+
+        if data is not None:
+            data['total_pomodoro_sessions'] = data.get('total_pomodoro_sessions', 0) + 1
+
+            if 'sessions_by_date' not in data:
+                data['sessions_by_date'] = {}
+            data['sessions_by_date'][current_date] = data['sessions_by_date'].get(current_date, 0) + 1
         else:
             data = {
                 'total_seconds_studied': 0, 
                 'total_pomodoro_sessions': 1,
                 'sessions_by_date': {current_date: 1}
             }
-        
-        with open(self.data_file, 'w') as file:
-            json.dump(data, file, indent=4)
+
+        save_data(data)
 
         if not was_break and self.auto_break_cycling:
             if self.short_break_counter >= self.short_breaks_before_long:
