@@ -6,12 +6,15 @@ from pygame import mixer
 mixer.init()
 beep = mixer.Sound('sounds/beep.mp3')
 
-# Until user sets custom pomodoro, short break, long break durations, this gets set
 DEF_POMODORO_MINS = 25
 DEF_SB_MINS = 5
 DEF_LB_MINS = 15
+
 # Default amount of short breaks before a long break (for auto break cycling)
 DEF_SB_BEFORE_L = 3
+
+CONFIG_FILE = 'config.json'
+DATA_FILE = 'data.json'
 
 
 def load_file(filename, on_no_file=None):
@@ -25,15 +28,20 @@ def load_file(filename, on_no_file=None):
 
 
 def load_data():
-    return load_file('data.json', None)
+    return load_file(DATA_FILE, None)
+
+
+def save_data(data):
+    with open(DATA_FILE, 'w') as data_file:
+        json.dump(data, data_file, indent=4)
 
 
 def load_config():
-    return load_file('config.json', {'theme': 'Default', 'sound': 'beep.mp3'})
+    return load_file(CONFIG_FILE, {'theme': 'Default', 'sound': 'beep.mp3'})
 
 
 def save_config(config):
-    with open('config.json', 'w') as config_file:
+    with open(CONFIG_FILE, 'w') as config_file:
         json.dump(config, config_file, indent=4)
 
 
