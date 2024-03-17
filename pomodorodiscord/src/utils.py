@@ -28,7 +28,11 @@ def load_file(filename, on_no_file=None):
 
 
 def load_data():
-    return load_file(DATA_FILE, None)
+    return load_file(DATA_FILE, {'total_seconds_studied': 0,
+                                 'total_pomodoro_sessions': 0,
+                                 'seconds_by_date': {},
+                                 'sessions_by_date': {}
+                                 })
 
 
 def save_data(data):
@@ -37,7 +41,9 @@ def save_data(data):
 
 
 def load_config():
-    return load_file(CONFIG_FILE, {'theme': 'Default', 'sound': 'beep.mp3'})
+    return load_file(CONFIG_FILE, {'theme': 'Default', 
+                                   'sound': 'beep.mp3'
+                                   })
 
 
 def save_config(config):
