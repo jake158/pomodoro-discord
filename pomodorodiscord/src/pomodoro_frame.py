@@ -159,7 +159,7 @@ class PomodoroFrame(ctk.CTkFrame):
 
         if was_break:
             if self.auto_break_cycling:
-                self.start_timer()
+                self.toggle_timer()
             return
 
         self.session_counter += 1
