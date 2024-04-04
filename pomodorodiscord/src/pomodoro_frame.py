@@ -69,6 +69,7 @@ class PomodoroFrame(ctk.CTkFrame):
         self.start_time_timestamp = None
         self.end_time_timestamp = None
         self.session_counter = 0
+        self.seconds_studied = 0
 
     def initialize_rpc(self):
         """Start the rich presence in a separate thread"""
@@ -79,11 +80,11 @@ class PomodoroFrame(ctk.CTkFrame):
     def update_rpc(self):
         while True:
             if self.break_running:
-                self.rpc.break_state(self.session_counter, self.start_time_timestamp, self.end_time_timestamp)
+                self.rpc.break_state(self.seconds_studied, self.start_time_timestamp, self.end_time_timestamp)
             elif self.running:
                 self.rpc.running_state(self.session_counter + 1, self.start_time_timestamp, self.end_time_timestamp)
             else:
-                self.rpc.default_state()
+                self.rpc.default_state(self.end_time_timestamp)
 
             # Discord-imposed rate limit
             time.sleep(15)
@@ -111,6 +112,7 @@ class PomodoroFrame(ctk.CTkFrame):
             self.remaining_time -= 1
             if not self.break_running:
                 self.track_second()
+                self.seconds_studied += 1
             minutes, seconds = divmod(self.remaining_time, 60)
             self.timer_display.configure(text=f"{minutes:02d}:{seconds:02d}")
             self.next_timer_update = self.after(1000, self.update_timer)
