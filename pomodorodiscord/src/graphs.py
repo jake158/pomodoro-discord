@@ -24,54 +24,47 @@ def fill_missing_dates(data, date_range):
     return [data.get(date.strftime("%Y-%m-%d"), 0) for date in date_range]
 
 
+def adjust_date_ticks(ax, dates):
+    """Adjust the x-axis to display a limited number of date labels."""
+    num_days = (max(dates) - min(dates)).days + 1
+    interval = max(1, num_days // 20)
+    ax.xaxis.set_major_locator(mdates.DayLocator(interval=interval))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    plt.xticks(rotation=45)
+
+
 def graph_pomodoro_sessions(data):
     original_dates = list(data.get('sessions_by_date', {}).keys())
-
-    # Convert string dates to datetime objects
     dates = [datetime.strptime(date, "%Y-%m-%d") for date in original_dates]
-
-    # Generate a complete date range
     date_range = generate_date_range(min(dates), max(dates))
-
-    # Fill missing dates with zero sessions
     sessions = fill_missing_dates(data['sessions_by_date'], date_range)
 
     plt.figure(figsize=(12, 8))
     plt.bar(date_range, sessions, color='blue', alpha=0.5, width=1)
-
     plt.title('Pomodoro Sessions per Day')
     plt.xlabel('Days')
     plt.ylabel('Pomodoro Sessions')
+
     ax = plt.gca()
-    ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    plt.xticks(rotation=45)
+    adjust_date_ticks(ax, date_range)
     plt.tight_layout()
     plt.show()
 
 
 def graph_hours_studied(data):
     original_dates = list(data.get('seconds_by_date', {}).keys())
-
-    # Convert string dates to datetime objects
     dates = [datetime.strptime(date, "%Y-%m-%d") for date in original_dates]
-
-    # Generate a complete date range
     date_range = generate_date_range(min(dates), max(dates))
-
-    # Fill missing dates with zero hours
     hours = [seconds / 3600 for seconds in fill_missing_dates(data['seconds_by_date'], date_range)]
 
     plt.figure(figsize=(12, 8))
     plt.bar(date_range, hours, color='blue', alpha=0.5, width=1)
-
     plt.title('Hours Studied per Day')
     plt.xlabel('Days')
     plt.ylabel('Hours Studied')
+
     ax = plt.gca()
-    ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    plt.xticks(rotation=45)
+    adjust_date_ticks(ax, date_range)
     plt.tight_layout()
     plt.show()
 
