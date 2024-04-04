@@ -1,3 +1,6 @@
+## Running
+
+`python3 run.py`
 
 ## Structure
 
@@ -17,6 +20,7 @@
     - `graphs.py`: matplotlib plots using data collected.
 - `sounds/`: Beep.
 - `themes/`: Responsible for all colors in the GUI. Theme is loaded on launch in run.py.
+- `tests/`: Basic tests. Ignore ResourceWarnings.
 
 ## File Dependencies
 
