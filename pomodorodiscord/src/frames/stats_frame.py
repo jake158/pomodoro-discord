@@ -1,6 +1,6 @@
 import customtkinter as ctk
 from datetime import datetime
-from src.components.statistic_display import StatisticDisplay
+from src.reusable.statistic_display import StatisticDisplay
 from src.utils import load_data
 from src.logic.graphs import graph_pomodoro_sessions, graph_hours_studied
 
