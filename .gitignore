@@ -1,5 +1,7 @@
 config.json
 data.json
+fake_data.json
+fake_data2.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
