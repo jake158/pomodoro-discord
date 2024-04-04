@@ -14,10 +14,13 @@ class RichPresence(pypresence.Presence):
             print(f"Failed to connect to Discord: {e}")
 
     def default_state(self):
-        self.update(state="Idling", details=None, large_image="graytomato")
+        self.update(state="Idling", details=None, large_image="graytomato",
+                    large_text="github.com/freeram/pomodoro-discord")
 
     def running_state(self, session, start_time, end_time):
-        self.update(state=f"Session {session}", details="Studying", start=start_time, end=end_time, large_image="tomato")
+        self.update(state=f"Session {session}", details="Studying", start=start_time,
+                    end=end_time, large_image="tomato", large_text="github.com/freeram/pomodoro-discord")
 
-    def break_state(self, start_time, end_time):
-        self.update(state="On break", details=None, start=start_time, end=end_time, large_image="greentomato")
+    def break_state(self, complete, start_time, end_time):
+        self.update(state=f"On break. Sessions completed: {complete}", details=None, start=start_time,
+                    end=end_time, large_image="greentomato", large_text="github.com/freeram/pomodoro-discord")

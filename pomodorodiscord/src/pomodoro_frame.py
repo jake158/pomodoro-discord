@@ -79,7 +79,7 @@ class PomodoroFrame(ctk.CTkFrame):
     def update_rpc(self):
         while True:
             if self.break_running:
-                self.rpc.break_state(self.start_time_timestamp, self.end_time_timestamp)
+                self.rpc.break_state(self.session_counter, self.start_time_timestamp, self.end_time_timestamp)
             elif self.running:
                 self.rpc.running_state(self.session_counter + 1, self.start_time_timestamp, self.end_time_timestamp)
             else:
