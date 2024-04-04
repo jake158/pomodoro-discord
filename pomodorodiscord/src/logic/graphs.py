@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from datetime import datetime, timedelta
 
-# Making sure you can run `python3 src/graphs.py`
+# Making sure you can run `python3 src/logic/graphs.py`
 current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
+src = os.path.dirname(os.path.dirname(current_dir))
+sys.path.append(src)
 
 from src.utils import load_data
 

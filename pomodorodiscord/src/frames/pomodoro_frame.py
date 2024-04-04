@@ -2,15 +2,14 @@ import time
 import threading
 import customtkinter as ctk
 from datetime import datetime, timedelta
-from src.utils import load_config, load_data, save_data, DEF_POMODORO_MINS, DEF_SB_MINS, DEF_LB_MINS, DEF_SB_BEFORE_L, beep
-from src.richpresence import RichPresence
+from src.utils import load_config, load_data, save_data, beep, DEF_POMODORO_MINS, DEF_SB_MINS, DEF_LB_MINS, DEF_SB_BEFORE_L
+from src.logic.richpresence import RichPresence
 
 BREAK_BTN_COLOR = "#9a9a9a"
 BREAK_HOVER = "#adaaaa"
 RESET_BTN_COLOR = "#cca508"
 RESET_HOVER = "#e3b707"
 
-# TODO: clean everything
 
 class PomodoroFrame(ctk.CTkFrame):
     def __init__(self, master):
@@ -22,7 +21,6 @@ class PomodoroFrame(ctk.CTkFrame):
         threading.Thread(target=self.initialize_rpc, daemon=True).start()
 
     def initialize_ui(self, config):
-        """Set up the UI components for the Pomodoro timer""" 
         # Helper text that appears when a break is running
         self.break_text = ctk.StringVar(value="")
         self.break_label = ctk.CTkLabel(self, textvariable=self.break_text, font=("Roboto", 15))
@@ -49,8 +47,6 @@ class PomodoroFrame(ctk.CTkFrame):
         self.reset_button.pack()
 
     def initialize_state(self, config):
-        """Initialize the state variables"""
-        # Main
         self.running = False
         self.break_running = False
         self.next_timer_update = None
@@ -72,7 +68,6 @@ class PomodoroFrame(ctk.CTkFrame):
         self.seconds_studied = 0
 
     def initialize_rpc(self):
-        """Start the rich presence in a separate thread"""
         self.rpc = RichPresence()
         self.rpc_thread = threading.Thread(target=self.update_rpc, daemon=True)
         self.rpc_thread.start()
@@ -84,7 +79,7 @@ class PomodoroFrame(ctk.CTkFrame):
             elif self.running:
                 self.rpc.running_state(self.session_counter + 1, self.start_time_timestamp, self.end_time_timestamp)
             else:
-                self.rpc.default_state(self.end_time_timestamp)
+                self.rpc.default_state()
 
             # Discord-imposed rate limit
             time.sleep(15)
@@ -138,7 +133,6 @@ class PomodoroFrame(ctk.CTkFrame):
             self.next_timer_update = None
 
         config = load_config()
-        # TODO: Make cleaner?
         self.pomodoro_time = int(config.get(to, default) * 60)
         self.auto_break_cycling = config.get("auto_break_cycling", False)
         self.short_break_counter = 0 if not self.auto_break_cycling else self.short_break_counter

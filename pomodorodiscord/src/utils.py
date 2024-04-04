@@ -1,16 +1,16 @@
+import json
 import os
 import sys
-import json
 from pygame import mixer
+
 
 mixer.init()
 beep = mixer.Sound('sounds/beep.mp3')
 
+
 DEF_POMODORO_MINS = 25
 DEF_SB_MINS = 5
 DEF_LB_MINS = 15
-
-# Default amount of short breaks before a long break (for auto break cycling)
 DEF_SB_BEFORE_L = 3
 
 CONFIG_FILE = 'config.json'
@@ -23,7 +23,6 @@ def load_file(filename, on_no_file=None):
             data = json.load(file)
     except FileNotFoundError:
         return on_no_file
-
     return data
 
 
@@ -31,8 +30,7 @@ def load_data():
     return load_file(DATA_FILE, {'total_seconds_studied': 0,
                                  'total_pomodoro_sessions': 0,
                                  'seconds_by_date': {},
-                                 'sessions_by_date': {}
-                                 })
+                                 'sessions_by_date': {}})
 
 
 def save_data(data):
@@ -41,9 +39,8 @@ def save_data(data):
 
 
 def load_config():
-    return load_file(CONFIG_FILE, {'theme': 'Default', 
-                                   'sound': 'beep.mp3'
-                                   })
+    return load_file(CONFIG_FILE, {'theme': 'Default',
+                                   'sound': 'beep.mp3'})
 
 
 def save_config(config):
