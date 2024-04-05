@@ -1,6 +1,6 @@
 import os
 import customtkinter as ctk
-from src.reusable.entry_frame import EntryFrame
+from src.reusable.settings_reusable import EntryFrame
 from src.utils import load_config, save_config, reload_app, beep, DEF_POMODORO_MINS, DEF_SB_MINS, DEF_LB_MINS, DEF_SB_BEFORE_L
 
 
