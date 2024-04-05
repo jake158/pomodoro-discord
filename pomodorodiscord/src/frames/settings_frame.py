@@ -12,23 +12,15 @@ class SettingsFrame(ctk.CTkScrollableFrame):
         
         self.abcycling_var = ctk.IntVar(value=config.get("auto_break_cycling", 0))
         self.abcycling_switch = ctk.CTkCheckBox(self, text=" Automatic break cycling", border_width=2, variable=self.abcycling_var, onvalue=1, offvalue=0, command=self.change_abcycling)
-        self.abcycling_switch.pack(pady=(10, 0))
+        self.abcycling_switch.pack(pady=(10, 5))
         
-        self.sb_before_l_entry = EntryFrame(self, "Short breaks before\nlong break (if auto cycling):", config, "short_breaks_before_long", DEF_SB_BEFORE_L, self.change_sb_before_l)
-        self.sb_before_l_entry.pack(pady=(10, 0))
-        
+        self.sbl_entry = EntryFrame(self, "Short breaks before\nlong break (if auto cycling):", config, "short_breaks_before_long", DEF_SB_BEFORE_L, self.change_sb_before_l)
         self.pomodoro_entry = EntryFrame(self, "Pomodoro Duration (mins):", config, "pomodoro_time", DEF_POMODORO_MINS, self.change_pomodoro_time)
-        self.pomodoro_entry.pack(pady=(5, 0))
-        
         self.sb_entry = EntryFrame(self, "Short Break Duration (mins):", config, "short_break_time", DEF_SB_MINS, self.change_sb_time)
-        self.sb_entry.pack(pady=(5, 0))
-        
         self.lb_entry = EntryFrame(self, "Long Break Duration (mins):", config, "long_break_time", DEF_LB_MINS, self.change_lb_time)
-        self.lb_entry.pack(pady=(5, 0))
         
         self.theme_label = ctk.CTkLabel(self, text="Select Theme (RESTARTS APP):")
         self.theme_label.pack(pady=(20, 0))
-
         self.theme_options = [os.path.splitext(theme)[0] for theme in os.listdir(self.themes_dir) if theme.endswith('.json')]
         selected = ctk.StringVar(value=config.get('theme', 'Default'))
         self.theme_menu = ctk.CTkOptionMenu(self, variable=selected, values=self.theme_options, anchor="n", command=self.change_theme)
@@ -58,7 +50,7 @@ class SettingsFrame(ctk.CTkScrollableFrame):
             save_config(config)
 
     def change_sb_before_l(self):
-        self.change_time(self.sb_before_l_entry, "short_breaks_before_long")
+        self.change_time(self.sbl_entry, "short_breaks_before_long")
 
     def change_pomodoro_time(self):
         self.change_time(self.pomodoro_entry, "pomodoro_time")

@@ -4,6 +4,7 @@ import customtkinter as ctk
 class EntryFrame(ctk.CTkFrame):
     def __init__(self, master, text, config, config_attr, defvalue, command):
         super().__init__(master)
+        self.pack(pady=(5, 0))
         
         self.label = ctk.CTkLabel(self, text=text)
         self.label.pack(pady=(10, 10), padx=(10, 10))
