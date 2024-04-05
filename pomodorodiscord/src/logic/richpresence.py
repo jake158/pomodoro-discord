@@ -25,7 +25,7 @@ class RichPresence(pypresence.Presence):
             return f"{total_hours:.1f} hours"
 
     def default_state(self):
-        self.update(state="Idling", details=None, start=datetime.now().timestamp(), large_image="graytomato",
+        self.update(state="Idling", details=None, start=self.launch_time, large_image="graytomato",
                     large_text="github.com/freeram/pomodoro-discord")
 
     def running_state(self, session, start_time, end_time):

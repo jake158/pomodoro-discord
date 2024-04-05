@@ -93,7 +93,7 @@ class PomodoroFrame(ctk.CTkFrame):
         end_time = now + timedelta(seconds=self.remaining_time)
         self.start_time_timestamp = now.timestamp()
         self.end_time_timestamp = end_time.timestamp()
-        # For track_second()
+        # For tracking seconds studied by date
         self.current_date = now.strftime("%Y-%m-%d")
 
         self.running = not self.running
@@ -107,7 +107,6 @@ class PomodoroFrame(ctk.CTkFrame):
             self.remaining_time -= 1
             if not self.break_running:
                 self.track_second()
-                self.seconds_studied += 1
             minutes, seconds = divmod(self.remaining_time, 60)
             self.timer_display.configure(text=f"{minutes:02d}:{seconds:02d}")
             self.next_timer_update = self.after(1000, self.update_timer)
@@ -116,8 +115,8 @@ class PomodoroFrame(ctk.CTkFrame):
 
     def track_second(self):
         current_date = self.current_date
+        self.seconds_studied += 1
         data = load_data()
-
         data['total_seconds_studied'] += 1
         data['seconds_by_date'][current_date] = data['seconds_by_date'].get(current_date, 0) + 1
         save_data(data)
@@ -160,16 +159,14 @@ class PomodoroFrame(ctk.CTkFrame):
 
         self.session_counter += 1
  
-        current_date = self.current_date
         data = load_data() 
-
         data['total_pomodoro_sessions'] += 1
-        data['sessions_by_date'][current_date] = data['sessions_by_date'].get(current_date, 0) + 1
+        data['sessions_by_date'][self.current_date] = data['sessions_by_date'].get(self.current_date, 0) + 1
         save_data(data)
 
         if not was_break and self.auto_break_cycling:
             if self.short_break_counter >= self.short_breaks_before_long:
-                self.short_break_counter = 0  # Reset counter when long break
+                self.short_break_counter = 0
                 self.long_break()
             else:
                 self.short_break()
