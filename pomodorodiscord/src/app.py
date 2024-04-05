@@ -6,7 +6,7 @@ from src.frames.stats_frame import StatsFrame
 
 class TabView(ctk.CTkTabview):
     def __init__(self, master, **kwargs):
-        super().__init__(master, **kwargs)
+        super().__init__(master, **kwargs, command=self.on_tab_change)
         self.add("Main")
         self.add("Settings")
         self.add("Stats")
@@ -19,6 +19,15 @@ class TabView(ctk.CTkTabview):
 
         self.stats_frame = StatsFrame(self.tab("Stats"))
         self.stats_frame.pack(expand=True, fill='both')
+
+        # Fixing scrolling on Linux
+        # https://github.com/TomSchimansky/CustomTkinter/issues/1356
+        self.stats_frame.bind_all("<Button-4>", lambda e: [frame._parent_canvas.yview("scroll", -1, "units") for frame in (self.stats_frame, self.settings_frame)])
+        self.stats_frame.bind_all("<Button-5>", lambda e: [frame._parent_canvas.yview("scroll", 1, "units") for frame in (self.stats_frame, self.settings_frame)])
+
+    def on_tab_change(self):
+        if self.get() == "Stats":
+            self.stats_frame.load_stats()
 
 
 class PomodoroApp(ctk.CTk):
