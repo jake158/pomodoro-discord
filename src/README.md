@@ -33,4 +33,3 @@
 - `src/frames/settings_frame.py` imports and uses `src/components/entry_frame.py` and `src/utils.py`.
 - `src/frames/stats_frame.py` imports and uses `src/components/statistic_display.py`, `src/utils.py`, and `src/logic/graphs.py`.
 
-## When running make sure you're in pomodoro-discord/pomodorodiscord.

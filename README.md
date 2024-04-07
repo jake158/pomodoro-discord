@@ -10,3 +10,8 @@ Some themes adapted from: https://github.com/avalon60/ctk_theme_builder/tree/dev
 
 ## Testing
 `python3 -m unittest discover tests`
+
+## Running
+`pip install -r requirements.txt`
+
+`python3 main.py`
