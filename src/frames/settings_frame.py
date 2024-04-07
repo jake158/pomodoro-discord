@@ -1,13 +1,12 @@
 import os
 import customtkinter as ctk
 from src.reusable.settings_reusable import EntryFrame
-from src.utils import load_config, save_config, reload_app, beep, DEF_POMODORO_MINS, DEF_SB_MINS, DEF_LB_MINS, DEF_SB_BEFORE_L
+from src.utils import THEMES_DIR, load_config, save_config, reload_app, beep, DEF_POMODORO_MINS, DEF_SB_MINS, DEF_LB_MINS, DEF_SB_BEFORE_L
 
 
 class SettingsFrame(ctk.CTkScrollableFrame):
     def __init__(self, master):
         super().__init__(master)
-        self.themes_dir = 'themes'
         config = load_config()
         
         self.abcycling_var = ctk.IntVar(value=config.get("auto_break_cycling", 0))
@@ -21,7 +20,7 @@ class SettingsFrame(ctk.CTkScrollableFrame):
         
         self.theme_label = ctk.CTkLabel(self, text="Select Theme (RESTARTS APP):")
         self.theme_label.pack(pady=(20, 0))
-        self.theme_options = [os.path.splitext(theme)[0] for theme in os.listdir(self.themes_dir) if theme.endswith('.json')]
+        self.theme_options = [os.path.splitext(theme)[0] for theme in os.listdir(THEMES_DIR) if theme.endswith('.json')]
         selected = ctk.StringVar(value=config.get('theme', 'Default'))
         self.theme_menu = ctk.CTkOptionMenu(self, variable=selected, values=self.theme_options, anchor="n", command=self.change_theme)
         self.theme_menu.pack(pady=(10, 0))

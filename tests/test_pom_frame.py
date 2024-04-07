@@ -16,7 +16,6 @@ class TestPomodoroFrame(unittest.TestCase):
 
     @ignore_warnings
     def setUp(self):
-        global root
         self.config = load_config()
         self.pomodoro_frame = PomodoroFrame(None)
 

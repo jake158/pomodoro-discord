@@ -5,7 +5,7 @@ from pygame import mixer
 
 
 mixer.init()
-beep = mixer.Sound('sounds/beep.mp3')
+beep = mixer.Sound('src/assets/sounds/beep.mp3')
 
 
 DEF_POMODORO_MINS = 25
@@ -15,6 +15,7 @@ DEF_SB_BEFORE_L = 3
 
 CONFIG_FILE = 'config.json'
 DATA_FILE = 'data.json'
+THEMES_DIR = 'src/assets/themes'
 
 
 def load_file(filename, on_no_file=None):
