@@ -9,9 +9,11 @@ Pomodoro timer GUI with Discord Rich Presence integration and stats tracking
 Some themes adapted from: https://github.com/avalon60/ctk_theme_builder/tree/develop/user_themes
 
 ## Testing
-`python3 -m unittest discover tests`
-
-## Running
 `pip install -r requirements.txt`
 
+`python3 -m unittest discover tests`
+
+Ignore ResourceWarnings, if any show up.
+
+## Running
 `python3 main.py`
