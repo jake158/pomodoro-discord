@@ -11,7 +11,7 @@ class RichPresence(pypresence.Presence):
         # Can only update every 15 seconds
         try:
             self.connect()
-            self.default_state()
+            self.idling_state()
         except Exception as e:
             print(f"Failed to connect to Discord: {e}")
 
@@ -22,15 +22,19 @@ class RichPresence(pypresence.Presence):
         if total_hours < 1:
             return f"{total_seconds // 60} minute{'s' if total_seconds // 60 != 1 else ''}"
         else:
-            return f"{total_hours:.1f} hours"
+            return f"{round(total_hours, 1) if total_hours % 1 != 0 else int(total_hours)} hours"
 
-    def default_state(self):
+    def idling_state(self):
         self.update(state="Idling", details=None, start=self.launch_time, large_image="graytomato",
                     large_text="github.com/freeram/pomodoro-discord")
 
     def running_state(self, session, start_time, end_time):
         self.update(state=f"Session {session}", details="Studying", start=start_time,
                     end=end_time, large_image="tomato", large_text="github.com/freeram/pomodoro-discord")
+
+    def paused_state(self, start_time):
+        self.update(state="Paused", details=None, start=start_time, large_image="graytomato",
+                    large_text="github.com/freeram/pomodoro-discord")
 
     def break_state(self, seconds_studied, start_time, end_time):
         self.update(state=f"Time studied: {self.format_time(seconds_studied)}", details="On break", start=start_time,

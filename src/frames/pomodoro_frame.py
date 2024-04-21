@@ -66,6 +66,7 @@ class PomodoroFrame(ctk.CTkFrame):
         self.end_time_timestamp = None
         self.session_counter = 0
         self.seconds_studied = 0
+        self.paused = False
 
     def initialize_rpc(self):
         self.rpc = RichPresence()
@@ -78,8 +79,10 @@ class PomodoroFrame(ctk.CTkFrame):
                 self.rpc.break_state(self.seconds_studied, self.start_time_timestamp, self.end_time_timestamp)
             elif self.running:
                 self.rpc.running_state(self.session_counter + 1, self.start_time_timestamp, self.end_time_timestamp)
+            elif self.paused:
+                self.rpc.paused_state(self.start_time_timestamp)
             else:
-                self.rpc.default_state()
+                self.rpc.idling_state()
 
             # Discord-imposed rate limit
             time.sleep(15)
@@ -88,18 +91,20 @@ class PomodoroFrame(ctk.CTkFrame):
         if self.next_timer_update:
             self.after_cancel(self.next_timer_update)
 
+        self.running = not self.running
+        btn_text = "Pause" if self.running else "Resume"
+        btn_fg = "transparent" if self.running else self.start_color
+        self.start_button.configure(text=btn_text, fg_color=btn_fg, hover=not self.running)
+
         # Rich presence info
         now = datetime.now()
         end_time = now + timedelta(seconds=self.remaining_time)
         self.start_time_timestamp = now.timestamp()
         self.end_time_timestamp = end_time.timestamp()
+        self.paused = not self.running
         # For tracking seconds studied by date
         self.current_date = now.strftime("%Y-%m-%d")
 
-        self.running = not self.running
-        btn_text = "Pause" if self.running else "Resume"
-        btn_fg = "transparent" if self.running else self.start_color
-        self.start_button.configure(text=btn_text, fg_color=btn_fg, hover=not self.running)
         self.update_timer()
 
     def update_timer(self):
@@ -125,6 +130,7 @@ class PomodoroFrame(ctk.CTkFrame):
         self.running = False
         self.break_running = False
         self.short_break_running = False
+        self.paused = False
         self.break_text.set("")
 
         if self.next_timer_update:
