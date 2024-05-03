@@ -10,8 +10,10 @@ BREAK_BTN_COLOR = "#9a9a9a"
 BREAK_HOVER = "#adaaaa"
 RESET_BTN_COLOR = "#cca508"
 RESET_HOVER = "#e3b707"
-CONNECTED_TEXT = "#45b54e"
-DISCONNECTED_TEXT = "#f75a4f"
+CONNECTED_COLOR = "#45b54e"
+DISCONNECTED_COLOR = "#f75a4f"
+CONNECTED_TEXT = "Connected to Discord [click to disconnect]"
+DISCONNECTED_TEXT = "Not connected to Discord [click to connect]"
 
 
 class PomodoroFrame(ctk.CTkFrame):
@@ -49,8 +51,8 @@ class PomodoroFrame(ctk.CTkFrame):
         self.reset_button = ctk.CTkButton(self, text="Reset", font=("Roboto", 17), fg_color=RESET_BTN_COLOR, hover_color=RESET_HOVER, command=self.reset)
         self.reset_button.pack(pady=(0, 10))
 
-        self.discord_button = ctk.CTkButton(self, text="Connected to Discord [click to disconnect]", font=("Roboto", 12), 
-                                              fg_color="transparent", text_color=CONNECTED_TEXT, hover=False, width=70, command=self.toggle_rpc)
+        self.discord_button = ctk.CTkButton(self, text=CONNECTED_TEXT, font=("Roboto", 12), 
+                                              fg_color="transparent", text_color=CONNECTED_COLOR, hover=False, width=70, command=self.toggle_rpc)
         self.discord_button.pack(pady=(20, 0))
 
     def initialize_state(self, config):
@@ -91,16 +93,16 @@ class PomodoroFrame(ctk.CTkFrame):
 
     def connect_rpc(self):
         if self.rpc.connect():
-            self.discord_button.configure(text="Connected to Discord [click to disconnect]", text_color=CONNECTED_TEXT, state="normal")
+            self.discord_button.configure(text=CONNECTED_TEXT, text_color=CONNECTED_COLOR, state="normal")
         else:
-            self.discord_button.configure(text="Not connected to Discord [click to connect]", text_color=DISCONNECTED_TEXT, state="normal")
+            self.discord_button.configure(text=DISCONNECTED_TEXT, text_color=DISCONNECTED_COLOR, state="normal")
             CTkMessagebox(title="Error", message="Connecting to Discord failed\nCheck console for error output", icon="cancel")
 
     def disconnect_rpc(self):
         if self.rpc.disconnect():
-            self.discord_button.configure(text="Not connected to Discord [click to connect]", text_color=DISCONNECTED_TEXT, state="normal")
+            self.discord_button.configure(text=DISCONNECTED_TEXT, text_color=DISCONNECTED_COLOR, state="normal")
         else:
-            self.discord_button.configure(text="Connected to Discord [click to disconnect]", text_color=CONNECTED_TEXT, state="normal")
+            self.discord_button.configure(text=CONNECTED_TEXT, text_color=CONNECTED_COLOR, state="normal")
             CTkMessagebox(title="Error", message="Disconnecting from Discord failed\nCheck console for error output", icon="cancel")
 
     def update_rpc(self):
