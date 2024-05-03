@@ -13,6 +13,17 @@ class RichPresence(pypresence.Presence):
         self.connect()
         self.idling_state()
 
+    def _handle_exceptions(func):
+        def wrapper(self, *args, **kwargs):
+            if not self.connected:
+                return
+            try:
+                func(self, *args, **kwargs)
+            except Exception as e:
+                print(f"Error updating Rich Presence: {e}")
+                self.connected = False
+        return wrapper
+
     def connect(self):
         try:
             super().connect()
@@ -41,18 +52,22 @@ class RichPresence(pypresence.Presence):
         else:
             return f"{round(total_hours, 1) if total_hours % 1 != 0 else int(total_hours)} hours"
 
+    @_handle_exceptions
     def idling_state(self):
         self.update(state="Idling", details=None, start=self.launch_time, large_image="graytomato",
                     large_text="github.com/freeram/pomodoro-discord")
 
+    @_handle_exceptions
     def running_state(self, session, start_time, end_time):
         self.update(state=f"Session {session}", details="Studying", start=start_time,
                     end=end_time, large_image="tomato", large_text="github.com/freeram/pomodoro-discord")
 
+    @_handle_exceptions
     def paused_state(self, start_time):
         self.update(state="Paused", details=None, start=start_time, large_image="graytomato",
                     large_text="github.com/freeram/pomodoro-discord")
 
+    @_handle_exceptions
     def break_state(self, seconds_studied, start_time, end_time):
         self.update(state=f"Time studied: {self.format_time(seconds_studied)}", details="On break", start=start_time,
                     end=end_time, large_image="greentomato", large_text="github.com/freeram/pomodoro-discord")
