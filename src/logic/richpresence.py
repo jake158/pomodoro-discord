@@ -9,11 +9,29 @@ class RichPresence(pypresence.Presence):
         super().__init__(client_id=CLIENT_ID)
         self.launch_time = datetime.now().timestamp()
         # Can only update every 15 seconds
+        self.connected = False
+        self.connect()
+
+    def connect(self):
         try:
-            self.connect()
+            super().connect()
             self.idling_state()
+            self.connected = True
         except Exception as e:
-            print(f"Failed to connect to Discord: {e}")
+            print(f"Failed to reconnect to Discord: {e}")
+            self.connected = False
+        return self.connected
+
+    def disconnect(self):
+        if not self.connected:
+            return True
+        try:
+            super().close()
+            self.connected = False
+        except Exception as e:
+            print(f"Failed to disconnect from Discord: {e}")
+            self.connected = True
+        return not self.connected
 
     def format_time(self, seconds_studied):
         total_seconds = seconds_studied
