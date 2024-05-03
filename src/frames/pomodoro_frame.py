@@ -50,7 +50,7 @@ class PomodoroFrame(ctk.CTkFrame):
         self.reset_button.pack(pady=(0, 10))
 
         self.discord_button = ctk.CTkButton(self, text="Connected to Discord [click to disconnect]", font=("Roboto", 12), 
-                                              fg_color="transparent", text_color=CONNECTED_TEXT, width=70, command=self.toggle_rpc)
+                                              fg_color="transparent", text_color=CONNECTED_TEXT, hover=False, width=70, command=self.toggle_rpc)
         self.discord_button.pack(pady=(20, 0))
 
     def initialize_state(self, config):
@@ -81,31 +81,39 @@ class PomodoroFrame(ctk.CTkFrame):
         self.rpc_thread.start()
 
     def toggle_rpc(self):
+        self.discord_button.configure(state="disabled")
         if not self.rpc.connected:
-            if self.rpc.connect():
-                self.discord_button.configure(text="Connected to Discord [click to disconnect]", text_color=CONNECTED_TEXT)
-            else:
-                CTkMessagebox(title="Error", message="Reconnecting to Discord failed\nCheck console for error output", icon="cancel")
+            self.discord_button.configure(text="Connecting...")
+            threading.Thread(target=self.connect_rpc, daemon=True).start()
         else:
-            if self.rpc.disconnect():
-                self.discord_button.configure(text="Not connected to Discord [click to connect]", text_color=DISCONNECTED_TEXT)
-            else:
-                CTkMessagebox(title="Error", message="Reconnecting to Discord failed\nCheck console for error output", icon="cancel")
+            self.discord_button.configure(text="Disconnecting...")
+            threading.Thread(target=self.disconnect_rpc, daemon=True).start()
+
+    def connect_rpc(self):
+        if self.rpc.connect():
+            self.discord_button.configure(text="Connected to Discord [click to disconnect]", text_color=CONNECTED_TEXT, state="normal")
+        else:
+            self.discord_button.configure(text="Not connected to Discord [click to connect]", text_color=DISCONNECTED_TEXT, state="normal")
+            CTkMessagebox(title="Error", message="Connecting to Discord failed\nCheck console for error output", icon="cancel")
+
+    def disconnect_rpc(self):
+        if self.rpc.disconnect():
+            self.discord_button.configure(text="Not connected to Discord [click to connect]", text_color=DISCONNECTED_TEXT, state="normal")
+        else:
+            self.discord_button.configure(text="Connected to Discord [click to disconnect]", text_color=CONNECTED_TEXT, state="normal")
+            CTkMessagebox(title="Error", message="Disconnecting from Discord failed\nCheck console for error output", icon="cancel")
 
     def update_rpc(self):
         while True:
             if self.rpc.connected:
-                try:
-                    if self.break_running:
-                        self.rpc.break_state(self.seconds_studied, self.start_time_timestamp, self.end_time_timestamp)
-                    elif self.running:
-                        self.rpc.running_state(self.session_counter + 1, self.start_time_timestamp, self.end_time_timestamp)
-                    elif self.paused:
-                        self.rpc.paused_state(self.start_time_timestamp)
-                    else:
-                        self.rpc.idling_state()
-                except Exception as e:
-                    print(f"Error updating Rich Presence: {e}")
+                if self.break_running:
+                    self.rpc.break_state(self.seconds_studied, self.start_time_timestamp, self.end_time_timestamp)
+                elif self.running:
+                    self.rpc.running_state(self.session_counter + 1, self.start_time_timestamp, self.end_time_timestamp)
+                elif self.paused:
+                    self.rpc.paused_state(self.start_time_timestamp)
+                else:
+                    self.rpc.idling_state()
 
             # Discord-imposed rate limit
             time.sleep(15)
