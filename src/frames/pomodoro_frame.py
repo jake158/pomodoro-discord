@@ -116,6 +116,9 @@ class PomodoroFrame(ctk.CTkFrame):
                     self.rpc.paused_state(self.start_time_timestamp)
                 else:
                     self.rpc.idling_state()
+            else:
+                if self.discord_button.cget("state") == 'normal':
+                    self.discord_button.configure(text=DISCONNECTED_TEXT, text_color=DISCONNECTED_COLOR)
 
             # Discord-imposed rate limit
             time.sleep(15)
