@@ -115,7 +115,7 @@ class PomodoroFrame(ctk.CTkFrame):
                 elif self.paused:
                     self.rpc.paused_state(self.start_time_timestamp)
                 else:
-                    self.rpc.idling_state()
+                    self.rpc.idling_state(self.seconds_studied)
             else:
                 if self.discord_button.cget("state") == 'normal':
                     self.discord_button.configure(text=DISCONNECTED_TEXT, text_color=DISCONNECTED_COLOR)
