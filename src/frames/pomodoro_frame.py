@@ -8,12 +8,17 @@ from src.logic.richpresence import RichPresence
 
 BREAK_BTN_COLOR = "#9a9a9a"
 BREAK_HOVER = "#adaaaa"
+
 RESET_BTN_COLOR = "#cca508"
 RESET_HOVER = "#e3b707"
-CONNECTED_COLOR = "#45b54e"
-DISCONNECTED_COLOR = "#f75a4f"
-CONNECTED_TEXT = "Connected to Discord [click to disconnect]"
-DISCONNECTED_TEXT = "Not connected to Discord [click to connect]"
+
+CONNECTED_TEXT = "Connected to Discord"
+CONNECTED_COLOR = "gray65"
+CONNECTED_HOVER = "gray77"
+
+DISCONNECTED_TEXT = "Not connected to Discord"
+DISCONNECTED_COLOR = "#d93b3b"
+DISCONNECTED_HOVER = "#fa5757"
 
 
 class PomodoroFrame(ctk.CTkFrame):
@@ -51,9 +56,17 @@ class PomodoroFrame(ctk.CTkFrame):
         self.reset_button = ctk.CTkButton(self, text="Reset", font=("Roboto", 17), fg_color=RESET_BTN_COLOR, hover_color=RESET_HOVER, command=self.reset)
         self.reset_button.pack(pady=(0, 10))
 
-        self.discord_button = ctk.CTkButton(self, text=CONNECTED_TEXT, font=("Roboto", 12), 
-                                              fg_color="transparent", text_color=CONNECTED_COLOR, hover=False, width=70, command=self.toggle_rpc)
-        self.discord_button.pack(pady=(20, 0))
+        self.discord_button = ctk.CTkButton(self, text="Connecting...", font=("Roboto", 12), fg_color="transparent", 
+                                            text_color=CONNECTED_COLOR, width=70, command=self.toggle_rpc,
+                                            hover_color = self.cget("bg_color"), state="disabled")
+        # Make text change color on hover
+        self.discord_button.bind("<Enter>", lambda event: self.discord_button.configure(text_color=CONNECTED_HOVER
+                                                                                        if self.discord_button.cget("text") is not DISCONNECTED_TEXT
+                                                                                        else DISCONNECTED_HOVER))
+        self.discord_button.bind("<Leave>", lambda event: self.discord_button.configure(text_color=CONNECTED_COLOR 
+                                                                                        if self.discord_button.cget("text") is not DISCONNECTED_TEXT 
+                                                                                        else DISCONNECTED_COLOR))
+        self.discord_button.pack(pady=(27, 0))
 
     def initialize_state(self, config):
         self.running = False
@@ -79,6 +92,7 @@ class PomodoroFrame(ctk.CTkFrame):
 
     def initialize_rpc(self):
         self.rpc = RichPresence()
+        self.discord_button.configure(state="normal", text=CONNECTED_TEXT)
         self.rpc_thread = threading.Thread(target=self.update_rpc, daemon=True)
         self.rpc_thread.start()
 
