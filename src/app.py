@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from PIL.ImageTk import PhotoImage
 from src.frames.pomodoro_frame import PomodoroFrame
 from src.frames.settings_frame import SettingsFrame
 from src.frames.stats_frame import StatsFrame
@@ -34,11 +35,15 @@ class PomodoroApp(ctk.CTk):
     WIDTH = 350
     HEIGHT = 450
 
-    def __init__(self):
+    def __init__(self, icon_path):
         super().__init__()
         self.title("Pomodoro Tracker")
         self.geometry(f"{PomodoroApp.WIDTH}x{PomodoroApp.HEIGHT}")
         self.resizable(False, True)
+
+        img = PhotoImage(file=icon_path)
+        self.wm_iconbitmap()
+        self.wm_iconphoto(False, img)
 
         self.tabview = TabView(master=self)
         self.tabview.pack(pady=(15, 30), expand=True, fill='y')
