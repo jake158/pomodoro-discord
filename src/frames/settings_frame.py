@@ -8,32 +8,79 @@ class SettingsFrame(ctk.CTkScrollableFrame):
     def __init__(self, master):
         super().__init__(master)
         config = load_config()
-        
-        self.abcycling_var = ctk.IntVar(value=config.get("auto_break_cycling", 0))
-        self.abcycling_switch = ctk.CTkCheckBox(self, text=" Automatic break cycling", border_width=2, variable=self.abcycling_var, onvalue=1, offvalue=0, command=self.change_abcycling)
+        self.initialize_ui(config)
+
+    def initialize_ui(self, config):
+        # ABC
+        self.abcycling_var   =       ctk.IntVar(value=config.get("auto_break_cycling", 0))
+        self.abcycling_switch=  ctk.CTkCheckBox(self,
+                                                text=" Automatic break cycling", 
+                                                border_width=2, 
+                                                variable=self.abcycling_var, 
+                                                onvalue=1, 
+                                                offvalue=0, 
+                                                command=self.change_abcycling)
         self.abcycling_switch.pack(pady=(10, 5))
         
-        self.sbl_entry = EntryFrame(self, "Short breaks before\nlong break (if auto cycling):", config, "short_breaks_before_long", DEF_SB_BEFORE_L, self.change_sb_before_l)
-        self.pomodoro_entry = EntryFrame(self, "Pomodoro Duration (mins):", config, "pomodoro_time", DEF_POMODORO_MINS, self.change_pomodoro_time)
-        self.sb_entry = EntryFrame(self, "Short Break Duration (mins):", config, "short_break_time", DEF_SB_MINS, self.change_sb_time)
-        self.lb_entry = EntryFrame(self, "Long Break Duration (mins):", config, "long_break_time", DEF_LB_MINS, self.change_lb_time)
+        # Enter a number frames
+        self.sbl_entry       =       EntryFrame(self, 
+                                                text="Short breaks before\nlong break (if auto cycling):", 
+                                                config=config, 
+                                                config_attr="short_breaks_before_long", 
+                                                defvalue=DEF_SB_BEFORE_L, 
+                                                command=self.change_sb_before_l)
+        self.pomodoro_entry  =       EntryFrame(self, 
+                                                text="Pomodoro Duration (mins):", 
+                                                config=config, 
+                                                config_attr="pomodoro_time", 
+                                                defvalue=DEF_POMODORO_MINS, 
+                                                command=self.change_pomodoro_time)
+        self.sb_entry        =       EntryFrame(self, 
+                                                text="Short Break Duration (mins):", 
+                                                config=config, 
+                                                config_attr="short_break_time", 
+                                                defvalue=DEF_SB_MINS, 
+                                                command=self.change_sb_time)
+        self.lb_entry        =       EntryFrame(self, 
+                                                text="Long Break Duration (mins):", 
+                                                config=config, 
+                                                config_attr="long_break_time", 
+                                                defvalue=DEF_LB_MINS, 
+                                                command=self.change_lb_time)
         
-        self.theme_label = ctk.CTkLabel(self, text="Select Theme (RESTARTS APP):")
-        self.theme_label.pack(pady=(20, 0))
-        self.theme_options = [os.path.splitext(theme)[0] for theme in os.listdir(THEMES_DIR) if theme.endswith('.json')]
-        selected = ctk.StringVar(value=config.get('theme', 'Default'))
-        self.theme_menu = ctk.CTkOptionMenu(self, variable=selected, values=self.theme_options, anchor="n", command=self.change_theme)
-        self.theme_menu.pack(pady=(10, 0))
+        # Theme selection
+        self.theme_label     =     ctk.CTkLabel(self, 
+                                                text="Select Theme (RESTARTS APP):")
 
-        self.volume_label = ctk.CTkLabel(self, text="Adjust Beep Volume:")
-        self.volume_label.pack(pady=(20, 0))
-        self.volume_slider = ctk.CTkSlider(self, from_=0, to=100, number_of_steps=100, command=self.change_volume)
-        self.volume_slider.pack(pady=(10, 0))
-        
+        self.theme_options   = [os.path.splitext(theme)[0] for theme in os.listdir(THEMES_DIR) if theme.endswith('.json')]
+        selected             = ctk.StringVar(value=config.get('theme', 'Default'))
+
+        self.theme_menu      =ctk.CTkOptionMenu(self, 
+                                                variable=selected, 
+                                                values=self.theme_options, 
+                                                anchor="n", 
+                                                command=self.change_theme)
+
+        # Volume controls
+        self.volume_label =        ctk.CTkLabel(self, 
+                                                text="Adjust Beep Volume:")
+        self.volume_slider =      ctk.CTkSlider(self, 
+                                                from_=0, 
+                                                to=100, 
+                                                number_of_steps=100, 
+                                                command=self.change_volume)
         self.volume_slider.set(config.get('volume', 10))
         self.change_volume(config.get('volume', 10))
         
-        self.beep_button = ctk.CTkButton(self, text="Play", width=70, command=beep.play)
+        self.beep_button =        ctk.CTkButton(self, 
+                                                text="Play", 
+                                                width=70, 
+                                                command=beep.play)
+        
+        self.theme_label.pack(pady=(20, 0))
+        self.theme_menu.pack(pady=(10, 0))
+        self.volume_label.pack(pady=(20, 0))
+        self.volume_slider.pack(pady=(10, 0))
         self.beep_button.pack(pady=(15, 0))
 
     def change_abcycling(self):

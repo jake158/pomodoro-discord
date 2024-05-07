@@ -1,27 +1,24 @@
 import customtkinter as ctk
 from datetime import datetime
 from CTkMessagebox import CTkMessagebox
-from src.reusable.stats_reusable import StatisticFrame, ButtonFrame
 from src.utils import load_data
+from src.reusable.stats_reusable import StatisticFrame, ButtonFrame
 from src.logic.graphs import graph_pomodoro_sessions, graph_hours_studied
 
 
 class StatsFrame(ctk.CTkScrollableFrame):
     def __init__(self, master):
         super().__init__(master)
-        self.time_today = StatisticFrame(self, "Time Studied Today:")
+        self.time_today      = StatisticFrame(self, "Time Studied Today:")
         self.pomodoros_today = StatisticFrame(self, "Pomodoros Today:")
-        self.total_hours = StatisticFrame(self, "Total Time Studied:")
+        self.total_hours     = StatisticFrame(self, "Total Time Studied:")
         self.total_pomodoros = StatisticFrame(self, "Total Pomodoros:")
-        self.graph_btn_1 = ButtonFrame(self, "Pomodoro Sessions Graph", "Show", self.show_sessions_graph)
-        self.graph_btn_2 = ButtonFrame(self, "Hours Studied Graph", "Show", self.show_hours_graph)
+        self.graph_btn_1     =    ButtonFrame(self, "Pomodoro Sessions Graph", "Show", self.show_sessions_graph)
+        self.graph_btn_2     =    ButtonFrame(self, "Hours Studied Graph", "Show", self.show_hours_graph)
         self.load_stats()
 
     def load_stats(self):
         data = load_data()
-        if not data:
-            return
-
         current_date = datetime.now().strftime("%Y-%m-%d")
         self.update_time_today(data, current_date)
         self.update_pomodoros_today(data, current_date)
