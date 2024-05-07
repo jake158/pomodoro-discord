@@ -1,14 +1,24 @@
 import time
 import threading
 import customtkinter as ctk
+from CTkMessagebox import CTkMessagebox
 from datetime import datetime, timedelta
 from src.utils import load_config, load_data, save_data, beep, DEF_POMODORO_MINS, DEF_SB_MINS, DEF_LB_MINS, DEF_SB_BEFORE_L
 from src.logic.richpresence import RichPresence
 
 BREAK_BTN_COLOR = "#9a9a9a"
 BREAK_HOVER = "#adaaaa"
+
 RESET_BTN_COLOR = "#cca508"
 RESET_HOVER = "#e3b707"
+
+CONNECTED_TEXT = "Connected to Discord"
+CONNECTED_COLOR = "gray65"
+CONNECTED_HOVER = "gray77"
+
+DISCONNECTED_TEXT = "Not connected to Discord"
+DISCONNECTED_COLOR = "#d93b3b"
+DISCONNECTED_HOVER = "#fa5757"
 
 
 class PomodoroFrame(ctk.CTkFrame):
@@ -44,7 +54,19 @@ class PomodoroFrame(ctk.CTkFrame):
         self.lb_button.pack(pady=(0, 10))
 
         self.reset_button = ctk.CTkButton(self, text="Reset", font=("Roboto", 17), fg_color=RESET_BTN_COLOR, hover_color=RESET_HOVER, command=self.reset)
-        self.reset_button.pack()
+        self.reset_button.pack(pady=(0, 10))
+
+        self.discord_button = ctk.CTkButton(self, text="Connecting...", font=("Roboto", 12), fg_color="transparent", 
+                                            text_color=CONNECTED_COLOR, width=70, command=self.toggle_rpc,
+                                            hover_color = self.cget("bg_color"), state="disabled")
+        # Make text change color on hover
+        self.discord_button.bind("<Enter>", lambda event: self.discord_button.configure(text_color=CONNECTED_HOVER
+                                                                                        if self.discord_button.cget("text") is not DISCONNECTED_TEXT
+                                                                                        else DISCONNECTED_HOVER))
+        self.discord_button.bind("<Leave>", lambda event: self.discord_button.configure(text_color=CONNECTED_COLOR 
+                                                                                        if self.discord_button.cget("text") is not DISCONNECTED_TEXT 
+                                                                                        else DISCONNECTED_COLOR))
+        self.discord_button.pack(pady=(27, 0))
 
     def initialize_state(self, config):
         self.running = False
@@ -70,19 +92,47 @@ class PomodoroFrame(ctk.CTkFrame):
 
     def initialize_rpc(self):
         self.rpc = RichPresence()
+        self.discord_button.configure(state="normal", text=CONNECTED_TEXT)
         self.rpc_thread = threading.Thread(target=self.update_rpc, daemon=True)
         self.rpc_thread.start()
 
+    def toggle_rpc(self):
+        self.discord_button.configure(state="disabled")
+        if not self.rpc.connected:
+            self.discord_button.configure(text="Connecting...")
+            threading.Thread(target=self.connect_rpc, daemon=True).start()
+        else:
+            self.discord_button.configure(text="Disconnecting...")
+            threading.Thread(target=self.disconnect_rpc, daemon=True).start()
+
+    def connect_rpc(self):
+        if self.rpc.connect():
+            self.discord_button.configure(text=CONNECTED_TEXT, text_color=CONNECTED_COLOR, state="normal")
+        else:
+            self.discord_button.configure(text=DISCONNECTED_TEXT, text_color=DISCONNECTED_COLOR, state="normal")
+            CTkMessagebox(title="Error", message="Connecting to Discord failed\nCheck console for error output", icon="cancel")
+
+    def disconnect_rpc(self):
+        if self.rpc.disconnect():
+            self.discord_button.configure(text=DISCONNECTED_TEXT, text_color=DISCONNECTED_COLOR, state="normal")
+        else:
+            self.discord_button.configure(text=CONNECTED_TEXT, text_color=CONNECTED_COLOR, state="normal")
+            CTkMessagebox(title="Error", message="Disconnecting from Discord failed\nCheck console for error output", icon="cancel")
+
     def update_rpc(self):
         while True:
-            if self.break_running:
-                self.rpc.break_state(self.seconds_studied, self.start_time_timestamp, self.end_time_timestamp)
-            elif self.running:
-                self.rpc.running_state(self.session_counter + 1, self.start_time_timestamp, self.end_time_timestamp)
-            elif self.paused:
-                self.rpc.paused_state(self.start_time_timestamp)
+            if self.rpc.connected:
+                if self.break_running:
+                    self.rpc.break_state(self.seconds_studied, self.start_time_timestamp, self.end_time_timestamp)
+                elif self.running:
+                    self.rpc.running_state(self.session_counter + 1, self.start_time_timestamp, self.end_time_timestamp)
+                elif self.paused:
+                    self.rpc.paused_state(self.start_time_timestamp)
+                else:
+                    self.rpc.idling_state(self.seconds_studied)
             else:
-                self.rpc.idling_state()
+                if self.discord_button.cget("state") == 'normal':
+                    self.discord_button.configure(text=DISCONNECTED_TEXT, text_color=DISCONNECTED_COLOR)
 
             # Discord-imposed rate limit
             time.sleep(15)

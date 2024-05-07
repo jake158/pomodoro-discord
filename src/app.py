@@ -32,7 +32,7 @@ class TabView(ctk.CTkTabview):
 
 class PomodoroApp(ctk.CTk):
     WIDTH = 350
-    HEIGHT = 400
+    HEIGHT = 450
 
     def __init__(self):
         super().__init__()
