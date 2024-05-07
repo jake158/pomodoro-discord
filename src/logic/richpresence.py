@@ -57,19 +57,19 @@ class RichPresence(pypresence.Presence):
     @_handle_exceptions
     def idling_state(self, seconds_studied=0):
         self.update(state=f"Total time studied: {self.format_time(self.total_seconds_studied + seconds_studied)}", 
-                    details="Idling", start=self.launch_time, large_image="graytomato", large_text="github.com/freeram/pomodoro-discord")
+                    details="Idling", start=self.launch_time, large_image="graytomato", large_text="github.com/jake158/pomodoro-discord")
 
     @_handle_exceptions
     def running_state(self, session, start_time, end_time):
         self.update(state=f"Session {session}", details="Studying", start=start_time,
-                    end=end_time, large_image="tomato", large_text="github.com/freeram/pomodoro-discord")
+                    end=end_time, large_image="tomato", large_text="github.com/jake158/pomodoro-discord")
 
     @_handle_exceptions
     def paused_state(self, start_time):
         self.update(state="Paused", details=None, start=start_time, large_image="graytomato",
-                    large_text="github.com/freeram/pomodoro-discord")
+                    large_text="github.com/jake158/pomodoro-discord")
 
     @_handle_exceptions
     def break_state(self, seconds_studied, start_time, end_time):
         self.update(state=f"Time studied: {self.format_time(seconds_studied)}", details="On break", start=start_time,
-                    end=end_time, large_image="greentomato", large_text="github.com/freeram/pomodoro-discord")
+                    end=end_time, large_image="greentomato", large_text="github.com/jake158/pomodoro-discord")

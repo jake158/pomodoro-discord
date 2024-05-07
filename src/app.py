@@ -38,6 +38,7 @@ class PomodoroApp(ctk.CTk):
         super().__init__()
         self.title("Pomodoro Tracker")
         self.geometry(f"{PomodoroApp.WIDTH}x{PomodoroApp.HEIGHT}")
+        self.resizable(False, True)
 
         self.tabview = TabView(master=self)
         self.tabview.pack(pady=(15, 30), expand=True, fill='y')
