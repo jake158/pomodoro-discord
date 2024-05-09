@@ -22,7 +22,7 @@ Broadcast your study sessions.
 
 3. Run simple tests (Ignore ResourceWarnings)
     ```
-    python3 -m unittest discover tests`
+    python3 -m unittest discover tests
     ```
 
 4. Run
