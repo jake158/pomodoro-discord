@@ -46,17 +46,17 @@ class RichPresence(pypresence.Presence):
             self.connected = True
             return False
 
-    def format_time(self, seconds_studied):
+    def format_time(self, seconds_studied, round_hours_to=1):
         total_seconds = seconds_studied
         total_hours = seconds_studied / 3600
         if total_hours < 1:
             return f"{total_seconds // 60} minute{'s' if total_seconds // 60 != 1 else ''}"
         else:
-            return f"{round(total_hours, 1) if total_hours % 1 != 0 else int(total_hours)} hours"
+            return f"{round(total_hours, round_hours_to) if total_hours % 1 != 0 else int(total_hours)} hours"
 
     @_handle_exceptions
     def idling_state(self, seconds_studied=0):
-        self.update(state=f"Total time studied: {self.format_time(self.total_seconds_studied + seconds_studied)}", 
+        self.update(state=f"Total time studied: {self.format_time(self.total_seconds_studied + seconds_studied, None)}", 
                     details="Idling",
                     start=self.launch_time, 
                     large_image="graytomato", 
