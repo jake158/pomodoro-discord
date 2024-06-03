@@ -2,7 +2,7 @@ import pypresence
 from datetime import datetime
 from src.utils import load_data
 
-CLIENT_ID = '1215345125002059836'
+CLIENT_ID = '1246995803294273616'
 
 
 class RichPresence(pypresence.Presence):
